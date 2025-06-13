@@ -150,7 +150,7 @@ const LineChart: React.FC<LineChartProps> = ({
     const { cx, cy, payload, index } = props;
     const { label } = payload;
     if (label === 1) {
-      return <circle key={index} cx={cx} cy={cy} r={2} fill="red" />;
+      return <circle key={index} cx={cx} cy={cy} r={3.0} fill="red" />;
     }
     return <g key={index} />;
   }, []);
@@ -276,42 +276,9 @@ const LineChart: React.FC<LineChartProps> = ({
     getEvent();
   }, [formID]);
 
-  // const renderYAxisTick = (props: any) => {
-  //   const { x, y, payload } = props;
-  //   let label = String(payload.value);
-  //   if (isStringArray(unit)) {
-  //     const unitName = JSON.parse(unit).find(
-  //       (item: ListItem) => item.id === +label
-  //     )?.name;
-  //     label = unitName || label;
-  //   }
-  //   const maxLength = 6; // 设置标签的最大长度
-  //   return (
-  //     <text
-  //       x={x}
-  //       y={y}
-  //       textAnchor="end"
-  //       fontSize={14}
-  //       fill="var(--color-text-3)"
-  //       dy={4}
-  //     >
-  //       {label.length > maxLength && <title>{label}</title>}
-  //       {label.length > maxLength
-  //         ? `${label.slice(0, maxLength - 1)}...`
-  //         : label}
-  //     </text>
-  //   );
-  // };
-
   const getEvent = async () => {
     if (!formID) return;
     try {
-      // const _data = await get(`monitor/api/monitor_event/query/${formID}`, {
-      //   params: {
-      //     page: 1,
-      //     page_size: -1,
-      //   },
-      // });
       const _data: any = {
         result: []
       };
@@ -372,41 +339,6 @@ const LineChart: React.FC<LineChartProps> = ({
   const timeToSecond = (time: string) => {
     return Math.floor(new Date(time).getTime() / 1000);
   };
-
-  // const indexChange = (value: any) => {
-  //   onTimeLineChange(value);
-  // };
-
-  // const onClick = (data: any) => {
-  //   if (!data) return [];
-  //   const { activePayload } = data;
-  //   const arr = activePayload?.map((item: any) => item?.payload)
-  //   onAnnotationClick(arr);
-  // };
-
-  // const renderDot = (props: any) => {
-  //   const { cx, cy, payload, index } = props;
-  //   const { label } = payload;
-  //   if ((label && label === 1)) {
-  //     return <circle key={index} cx={cx} cy={cy} r={1.5} fill="red" />;
-  //   } else {
-  //     return <g key={index} />;
-  //   }
-  // };
-
-  // const renderMinDot = (props: any) => {
-  //   const { cx, cy, payload, index } = props;
-  //   const { label } = payload;
-  //   if (label && label === 1) {
-  //     return (
-  //       <circle key={index} cx={cx} cy={cy} r={.3} fill="red" />
-  //     )
-  //   } else {
-  //     return (
-  //       <g key={index} />
-  //     )
-  //   }
-  // };
 
   return (
     <div
@@ -473,6 +405,7 @@ const LineChart: React.FC<LineChartProps> = ({
                   dataKey={key}
                   dot={renderDot}
                   stroke={'#1976d2'}
+                  strokeWidth={2}
                   fillOpacity={0}
                   fill={colors[index]}
                   hide={!visibleAreas.includes(key)}
