@@ -159,7 +159,7 @@ const LineChart: React.FC<LineChartProps> = ({
     const { cx, cy, payload, index } = props;
     const { label } = payload;
     if (label === 1) {
-      return <circle key={index} cx={cx} cy={cy} r={0.4} fill="red" />;
+      return <circle key={index} cx={cx} cy={cy} r={1} fill="red" />;
     }
     return <g key={index} />;
   }, []);

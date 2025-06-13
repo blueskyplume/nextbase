@@ -2,11 +2,11 @@ import { Button, Drawer } from "antd";
 import { ColumnItem, TableDataItem } from "@/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
-const TrainTaskDrawer = () => {
+const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => void }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [childrenOpen, setChildrenOpen] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableDataItem[]>([
     {
       key: '1',
@@ -48,12 +48,14 @@ const TrainTaskDrawer = () => {
     {
       title: t('traintask.executionStatus'),
       dataIndex: 'status',
-      key: 'status'
+      key: 'status',
+      width: 120
     },
     {
       title: t('traintask.executionScore'),
       dataIndex: 'score',
-      key: 'score'
+      key: 'score',
+      width: 120
     },
     {
       title: t('common.action'),
@@ -72,18 +74,23 @@ const TrainTaskDrawer = () => {
   ];
 
   const showDrawer = () => {
-    setOpen(true);
+    setChildrenOpen(true);
   };
 
   const onClose = () => {
-    setOpen(false);
+    setChildrenOpen(false);
   };
 
   return (
     <>
       <Drawer
+        width={500}
         title={t('traintask.history')}
         open={open}
+        onClose={onCancel}
+        footer={(
+          <Button onClick={onCancel}>{t('common.cancel')}</Button>
+        )}
       >
         <CustomTable
           columns={columns}

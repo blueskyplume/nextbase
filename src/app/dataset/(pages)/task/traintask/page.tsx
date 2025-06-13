@@ -10,7 +10,8 @@ import { supabase } from '@/utils/supabaseClient';
 // import Icon from '@/components/icon';
 import { ColumnItem } from '@/types';
 import { User } from '@supabase/supabase-js';
-import { ModalConfig,ModalRef } from '../types';
+import { ModalConfig, ModalRef } from '../types';
+import TrainTaskDrawer from './traintaskDrawer';
 
 const { Search } = Input;
 
@@ -27,8 +28,9 @@ const TrainTask = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const modalRef = useRef<ModalRef>(null);
-  const [user , setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [tableData, setTableData] = useState<TrainTaskData[]>([]);
+  const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -98,21 +100,21 @@ const TrainTask = () => {
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => router.push(`/dataset/task/traintask/detail?id=${record.id}`)}
+            onClick={() => {}}
           >
             训练
           </Button>
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => router.push(`/dataset/task/traintask/detail?id=${record.id}`)}
+            onClick={() => setOpen(true)}
           >
             历史记录
           </Button>
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => router.push(`/dataset/task/traintask/detail?id=${record.id}`)}
+            onClick={() => {}}
           >
             编辑
           </Button>
@@ -148,7 +150,7 @@ const TrainTask = () => {
   }, [tableData]);
 
   const handleAdd = () => {
-    if(modalRef.current) {
+    if (modalRef.current) {
       modalRef.current.showModal({
         type: 'add',
         title: 'addtask',
@@ -173,7 +175,11 @@ const TrainTask = () => {
     setLoading(false);
   };
 
-  
+  const onCancel = () => {
+    setOpen(false)
+  }
+
+
 
   return (
     <div className={`flex w-full h-full text-sm p-[20px] ${sideMenuStyle.sideMenuLayout} grow`}>
@@ -223,8 +229,9 @@ const TrainTask = () => {
         ref={modalRef}
         supabase={supabase}
         user={user as User}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
       />
+      <TrainTaskDrawer open={open} onCancel={onCancel} />
     </div>
   );
 };
