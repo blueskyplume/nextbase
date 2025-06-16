@@ -389,7 +389,7 @@ const LineChart: React.FC<LineChartProps> = ({
               })}
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <Tooltip
-                offset={-80}
+                offset={15}
                 content={
                   <CustomTooltip
                     unit={unit}

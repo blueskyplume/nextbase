@@ -5,7 +5,7 @@ import EntityList from '@/components/entity-list';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import DatasetModal from './dataSetsModal';
-import { ModalRef, UserProfile } from './types';
+import { ModalRef, UserProfile } from '@/types';
 import '@ant-design/v5-patch-for-react-19';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';

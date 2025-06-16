@@ -7,12 +7,11 @@ import CustomTable from '@/components/custom-table';
 import sideMenuStyle from './index.module.scss';
 import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
-// import Icon from '@/components/icon';
 import { ColumnItem } from '@/types';
 import { User } from '@supabase/supabase-js';
-import { ModalConfig, ModalRef } from '../types';
+import { ModalRef } from '@/types';
 import TrainTaskDrawer from './traintaskDrawer';
-
+import TrainDataModal from './traindataModal';
 const { Search } = Input;
 
 interface TrainTaskData {
@@ -26,46 +25,17 @@ interface TrainTaskData {
 
 const TrainTask = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const modalRef = useRef<ModalRef>(null);
+  const traindataRef = useRef<ModalRef>(null);
   const [user, setUser] = useState<User | null>(null);
   const [tableData, setTableData] = useState<TrainTaskData[]>([]);
   const [open, setOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 1,
     pageSize: 10,
   });
-
-  // 示例数据获取（请替换为实际接口）
-  const getTasks = async (search: string = '') => {
-    setLoading(true);
-    // TODO: 替换为实际接口
-    // const { data } = await fetchTaskList(search);
-    const data = [
-      { id: 1, name: '任务A', type: '分类', created_at: '2024-06-01 10:00:00', creator: '张三' },
-      { id: 2, name: '任务B', type: '回归', created_at: '2024-06-02 11:00:00', creator: '李四' },
-    ];
-    setTableData(data);
-    setPagination(prev => ({
-      ...prev,
-      total: data.length,
-    }));
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getTasks();
-  }, []);
-
-  const pagedData = useMemo(() => {
-    if (!tableData.length) return [];
-    return tableData.slice(
-      (pagination.current - 1) * pagination.pageSize,
-      pagination.current * pagination.pageSize
-    );
-  }, [tableData, pagination.current, pagination.pageSize]);
 
   const columns: ColumnItem[] = [
     {
@@ -89,6 +59,11 @@ const TrainTask = () => {
       dataIndex: 'creator',
     },
     {
+      title: '状态',
+      key: 'status',
+      dataIndex: 'status',
+    },
+    {
       title: '操作',
       key: 'action',
       dataIndex: 'action',
@@ -100,7 +75,7 @@ const TrainTask = () => {
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => {}}
+            onClick={() => handleTrainSelect(record)}
           >
             训练
           </Button>
@@ -114,7 +89,7 @@ const TrainTask = () => {
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => {}}
+            onClick={() => { }}
           >
             编辑
           </Button>
@@ -142,12 +117,62 @@ const TrainTask = () => {
     </div>
   );
 
+  const pagedData = useMemo(() => {
+    if (!tableData.length) return [];
+    return tableData.slice(
+      (pagination.current - 1) * pagination.pageSize,
+      pagination.current * pagination.pageSize
+    );
+  }, [tableData, pagination.current, pagination.pageSize]);
+
+
+  useEffect(() => {
+    getTasks();
+    getUser();
+  }, []);
+
   useEffect(() => {
     setPagination(prev => ({
       ...prev,
       total: tableData.length,
     }));
   }, [tableData]);
+
+  // 示例数据获取（请替换为实际接口）
+  const getTasks = async (search: string = '') => {
+    setLoading(true);
+    // TODO: 替换为实际接口
+    // const data = await fetchTaskList();
+    const data = [
+      { id: 1, name: '任务A', type: '分类', created_at: '2024-06-01 10:00:00', creator: '张三', status: '训练中', dataset_id: 10 },
+      { id: 2, name: '任务B', type: '回归', created_at: '2024-06-02 11:00:00', creator: '李四', status: '已完成', dataset_id: 10 },
+    ];
+    setTableData(data as TrainTaskData[]);
+    setPagination(prev => ({
+      ...prev,
+      total: data?.length || 0,
+    }));
+    setLoading(false);
+  };
+
+  const fetchTaskList = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.from('anomaly_detection_train_jobs').select();
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUser = async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      message.error(error.message);
+      return;
+    }
+    setUser(data.user);
+  };
 
   const handleAdd = () => {
     if (modalRef.current) {
@@ -157,7 +182,13 @@ const TrainTask = () => {
         form: {}
       })
     }
-  }
+  };
+
+  const handleTrainSelect = (record: any) => {
+    if (traindataRef.current) {
+      traindataRef.current.showModal({ type: '', form: { dataset_id: record?.dataset_id } })
+    }
+  };
 
   const handleChange = (value: any) => {
     setPagination(value);
@@ -176,10 +207,8 @@ const TrainTask = () => {
   };
 
   const onCancel = () => {
-    setOpen(false)
-  }
-
-
+    setOpen(false);
+  };
 
   return (
     <div className={`flex w-full h-full text-sm p-[20px] ${sideMenuStyle.sideMenuLayout} grow`}>
@@ -232,6 +261,7 @@ const TrainTask = () => {
         onSuccess={() => { }}
       />
       <TrainTaskDrawer open={open} onCancel={onCancel} />
+      <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} onSuccess={() => { }} />
     </div>
   );
 };

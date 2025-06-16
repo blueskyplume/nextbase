@@ -6,7 +6,7 @@ import { Upload, Button, message } from 'antd';
 import type { UploadProps } from 'antd'
 import { InboxOutlined } from '@ant-design/icons';
 import { supabase } from '@/utils/supabaseClient';
-import { ModalConfig } from '../types';
+import { ModalConfig } from '@/types';
 import { UserInfoContext } from '@/context/userInfo';
 import { User } from '@supabase/supabase-js';
 const { Dragger } = Upload;

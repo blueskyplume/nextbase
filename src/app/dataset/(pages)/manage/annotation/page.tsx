@@ -250,7 +250,7 @@ const AnnotationPage = () => {
         const index = _data.findIndex((k) => k.timestamp === item.timestamp);
         _data.splice(index, 1, {
           ...item,
-          label: 1
+          label: item.label ? 0 : 1
         })
       });
       const _tableData = _data.filter((item: any) => item.label === 1);
