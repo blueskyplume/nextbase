@@ -16,7 +16,10 @@
     "successfullyDeleted": "Delete successful!",
     "action": "Action",
     "type": "Type",
-    "detail": "Detail"
+    "detail": "Detail",
+    "status": "Status",
+    "creator": "Creator",
+    "createdAt": "Create at"
   },
   "datasets": {
     "addform": "New datasets added",
@@ -37,15 +40,20 @@
     "deleteContent": "Are you sure you want to delete this file?"
   },
   "traintask": {
+    "train": "Train",
     "traindata": "Training data",
+    "trainfile": "Training data file",
     "algorithms": "Training algorithms",
     "datasets": "Datasets",
     "addtask": "New training tasks",
+    "edittask": "Edit training tasks",
     "history": "History",
     "executionTime": "Execution time",
     "executionStatus": "Execution Status",
     "executionScore": "Execution Score",
     "modelDownload": "Model Download",
-    "selectDatasets": "Please select a data set"
+    "selectDatasets": "Please select a data set",
+    "selectTraindata": "Please select the training data file",
+    "deleteTraintask": "Sure you want to delete this training task?"
   }
 }

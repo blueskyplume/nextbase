@@ -1,10 +1,10 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
-import { Form, Input, Button, Select, Typography, FormInstance, message } from 'antd';
+import { Form, Input, Button, Select, FormInstance, message } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { SupabaseClient, User } from '@supabase/supabase-js';
-const { Paragraph } = Typography;
+import '@ant-design/v5-patch-for-react-19';
 
 interface TrainTaskModalProps {
   supabase: SupabaseClient;
@@ -47,16 +47,17 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
       setType(type);
       setTitle(title);
       setFormData(form);
+      console.log(form)
     }
   }));
 
   const datasetItems = useMemo(() => {
-    return datasets.map((item) => {
+    return datasets?.map((item) => {
       return {
         value: item.id,
         label: item.name
       }
-    })
+    }) || [];
   }, [datasets])
 
   useEffect(() => {
@@ -64,11 +65,16 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
       formRef.current?.resetFields();
       getDataSets();
 
-      formRef.current?.setFieldsValue({
-        ...formData,
-        type: 'anomaly',
-        algorithms: 'IsolationForst',
-      });
+      if (type === 'add') {
+        formRef.current?.setFieldsValue({
+          type: 'anomaly',
+          algorithms: 'IsolationForst',
+        });
+        return;
+      }
+      formRef.current.setFieldsValue({
+        ...formData
+      })
     }
   }, [formData, isModalOpen]);
 
@@ -80,14 +86,16 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
-      const data = formRef.current?.getFieldsValue();
+      const value = await formRef.current?.validateFields();
+      // const data = formRef.current?.getFieldsValue();
       // const taskParam = {
       //   tenant_id: user.app_metadata?.tenant_id,
       //   name: data.name,
 
       // }
-      console.log(user)
-      console.log(data);
+      console.log(value);
+    } catch (e) {
+      console.log(e)
     } finally {
       setConfirmLoading(false);
     }
@@ -115,8 +123,6 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
         <Form
           ref={formRef}
           layout="vertical"
-        // labelCol={{ span: 4 }}
-        // wrapperCol={{ span: 14 }}
         >
           <Form.Item
             name='name'
@@ -135,7 +141,7 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
             ]} />
           </Form.Item>
           <Form.Item
-            name='dataset'
+            name='dataset_id'
             label={t('traintask.datasets')}
             rules={[{ required: true, message: t('traintask.selectDatasets') }]}
           >

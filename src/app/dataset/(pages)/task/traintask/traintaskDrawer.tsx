@@ -210,10 +210,10 @@ const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => vo
           dataSource={tableData}
           expandable={{
             expandedRowRender: (record) => {
-              console.log(record)
+              console.log(record, 1)
               return (
                 <CustomTable
-                  rowKey={record.key}
+                  key={record.key}
                   scroll={{ x: 'calc(100vh - 480px)' }}
                   loading={record.lording}
                   columns={renderColumns(record.params)}

@@ -12,6 +12,7 @@ import { User } from '@supabase/supabase-js';
 import { ModalRef } from '@/types';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
+import { useTranslation } from '@/utils/i18n';
 const { Search } = Input;
 
 interface TrainTaskData {
@@ -24,6 +25,7 @@ interface TrainTaskData {
 }
 
 const TrainTask = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
   const traindataRef = useRef<ModalRef>(null);
@@ -39,32 +41,32 @@ const TrainTask = () => {
 
   const columns: ColumnItem[] = [
     {
-      title: '名称',
+      title: t('common.name'),
       key: 'name',
       dataIndex: 'name',
     },
     {
-      title: '类型',
+      title: t('common.type'),
       key: 'type',
       dataIndex: 'type',
     },
     {
-      title: '创建时间',
+      title: t('common.createdAt'),
       key: 'created_at',
       dataIndex: 'created_at',
     },
     {
-      title: '创建人',
+      title: t('common.creator'),
       key: 'creator',
       dataIndex: 'creator',
     },
     {
-      title: '状态',
+      title: t('common.status'),
       key: 'status',
       dataIndex: 'status',
     },
     {
-      title: '操作',
+      title: t('common.action'),
       key: 'action',
       dataIndex: 'action',
       width: 240,
@@ -77,29 +79,29 @@ const TrainTask = () => {
             className="mr-[10px]"
             onClick={() => handleTrainSelect(record)}
           >
-            训练
+            {t('traintask.train')}
           </Button>
           <Button
             type="link"
             className="mr-[10px]"
             onClick={() => setOpen(true)}
           >
-            历史记录
+            {t('traintask.history')}
           </Button>
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => { }}
+            onClick={() => handleEdit(record)}
           >
-            编辑
+            {t('common.edit')}
           </Button>
           <Popconfirm
-            title="确定要删除该任务吗？"
-            okText="确认"
-            cancelText="取消"
+            title={t('traintask.deleteTraintask')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
             onConfirm={() => onDelete(record)}
           >
-            <Button type="link">删除</Button>
+            <Button type="link">{t('common.delete')}</Button>
           </Popconfirm>
         </>
       ),
@@ -183,6 +185,16 @@ const TrainTask = () => {
       })
     }
   };
+
+  const handleEdit = (record: any) => {
+    if (modalRef.current) {
+      modalRef.current.showModal({
+        type: 'edit',
+        title: 'edittask',
+        form: record
+      })
+    }
+  }
 
   const handleTrainSelect = (record: any) => {
     if (traindataRef.current) {
