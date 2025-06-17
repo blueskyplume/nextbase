@@ -19,7 +19,9 @@
     "detail": "Detail",
     "status": "Status",
     "creator": "Creator",
-    "createdAt": "Create at"
+    "createdAt": "Create at",
+    "createdSuccess": "Created Successfully",
+    "updateSuccess": "Successful update"
   },
   "datasets": {
     "addform": "New datasets added",
@@ -53,7 +55,7 @@
     "executionScore": "Execution Score",
     "modelDownload": "Model Download",
     "selectDatasets": "Please select a data set",
-    "selectTraindata": "Please select the training data file",
+    "selectTraindata": "Please select the training data parameters",
     "deleteTraintask": "Sure you want to delete this training task?"
   }
 }

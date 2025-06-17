@@ -1,36 +1,39 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button, Input, Popconfirm, message } from 'antd';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import sideMenuStyle from './index.module.scss';
 import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
-import { ColumnItem } from '@/types';
 import { User } from '@supabase/supabase-js';
-import { ModalRef } from '@/types';
+import { ModalRef, UserProfile, ColumnItem } from '@/types';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
 import { useTranslation } from '@/utils/i18n';
+import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 const { Search } = Input;
 
-interface TrainTaskData {
-  id: number;
-  name: string;
-  type: string;
-  created_at: string;
-  creator: string;
-  [key: string]: any;
+interface TrainJob {
+  id: string | number,
+  user_id: string,
+  dataset_id: number,
+  name: string,
+  type: string,
+  status: string,
+  created_at: string,
 }
 
 const TrainTask = () => {
   const { t } = useTranslation();
+  const { convertToLocalizedTime } = useLocalizedTime();
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
   const traindataRef = useRef<ModalRef>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [tableData, setTableData] = useState<TrainTaskData[]>([]);
+  const [tableData, setTableData] = useState<TrainJob[]>([]);
+  const [trainData, setTrainData] = useState<any[]>([]);
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
@@ -49,11 +52,17 @@ const TrainTask = () => {
       title: t('common.type'),
       key: 'type',
       dataIndex: 'type',
+      render: (_, record) => {
+        return (<>{t(`datasets.${record.type}`)}</>)
+      }
     },
     {
       title: t('common.createdAt'),
       key: 'created_at',
       dataIndex: 'created_at',
+      render: (_, record) => {
+        return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
+      }
     },
     {
       title: t('common.creator'),
@@ -72,7 +81,7 @@ const TrainTask = () => {
       width: 240,
       fixed: 'right',
       align: 'center',
-      render: (_: unknown, record: TrainTaskData) => (
+      render: (_: unknown, record: TrainJob) => (
         <>
           <Button
             type="link"
@@ -130,7 +139,8 @@ const TrainTask = () => {
 
   useEffect(() => {
     getTasks();
-    getUser();
+    getTrainData();
+    getCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -140,34 +150,78 @@ const TrainTask = () => {
     }));
   }, [tableData]);
 
-  // 示例数据获取（请替换为实际接口）
-  const getTasks = async (search: string = '') => {
-    setLoading(true);
-    // TODO: 替换为实际接口
-    // const data = await fetchTaskList();
-    const data = [
-      { id: 1, name: '任务A', type: '分类', created_at: '2024-06-01 10:00:00', creator: '张三', status: '训练中', dataset_id: 10 },
-      { id: 2, name: '任务B', type: '回归', created_at: '2024-06-02 11:00:00', creator: '李四', status: '已完成', dataset_id: 10 },
-    ];
-    setTableData(data as TrainTaskData[]);
-    setPagination(prev => ({
-      ...prev,
-      total: data?.length || 0,
-    }));
-    setLoading(false);
+  const getName = (targetID: string, data: UserProfile[] | null) => {
+    if (data) {
+      const target: UserProfile = data.find(u => u.id == targetID) as UserProfile;
+      const name = target?.first_name + target?.last_name;
+      return name || '--';
+    }
+    return '--';
   };
 
-  const fetchTaskList = async () => {
+  const getTrainStatus = (targetID: string | number, data: any[] | null) => {
+    if (data) {
+      const filterArr = data.filter((item) => item.train_data_id === targetID).sort((a, b) => a.updated_at - b.updated_at);
+      const target = filterArr[filterArr.length - 1]?.status;
+      return target || '';
+    }
+    return '';
+  };
+
+  const getTasks = async (search: string = '') => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('anomaly_detection_train_jobs').select();
-      return data;
+      const data = await fetchTaskList(search);
+      const history = await fetchHistory();
+      const { data: users } = await supabase
+        .from('user_profiles')
+        .select('id,first_name,last_name');
+      const _data = data?.map((item) => ({
+        id: item.id,
+        name: item.name,
+        type: 'anomaly',
+        dataset_id: item.dataset_id,
+        created_at: item.created_at,
+        creator: getName(item?.user_id, users),
+        status: getTrainStatus(item.id, history),
+        user_id: item.user_id
+      })) || [];
+      setTableData(_data as TrainJob[]);
+      setPagination(prev => ({
+        ...prev,
+        total: data?.length || 0,
+      }));
+    } catch (e) {
+      console.log(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const getUser = async () => {
+  const fetchTaskList = async (search: string = '') => {
+    setLoading(true);
+    const { data } = await supabase.from('anomaly_detection_train_jobs')
+      .select()
+      .ilike('name', `%${search}%`);
+    return data;
+  };
+
+  const fetchHistory = async () => {
+    const { data } = await supabase.from("anomaly_detection_train_history").select();
+    return data;
+  };
+
+  const getTrainData = async () => {
+    try {
+      const { data, error } = await supabase.from("anomaly_detection_train_data").select();
+      if(!error) return setTrainData(data);
+      message.error(error.message);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  const getCurrentUser = async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
       message.error(error.message);
@@ -194,11 +248,11 @@ const TrainTask = () => {
         form: record
       })
     }
-  }
+  };
 
   const handleTrainSelect = (record: any) => {
     if (traindataRef.current) {
-      traindataRef.current.showModal({ type: '', form: { dataset_id: record?.dataset_id } })
+      traindataRef.current.showModal({ type: '', form: record });
     }
   };
 
@@ -210,12 +264,17 @@ const TrainTask = () => {
     getTasks(search);
   };
 
-  const onDelete = async (record: TrainTaskData) => {
-    setLoading(true);
-    // TODO: 调用删除接口
-    message.success('删除成功');
-    getTasks();
-    setLoading(false);
+  const onDelete = async (record: TrainJob) => {
+    try {
+      await supabase.from('anomaly_detection_train_jobs')
+        .delete()
+        .eq('id', record.id);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      message.success('删除成功');
+      getTasks();
+    }
   };
 
   const onCancel = () => {
@@ -272,8 +331,8 @@ const TrainTask = () => {
         user={user as User}
         onSuccess={() => { }}
       />
-      <TrainTaskDrawer open={open} onCancel={onCancel} />
-      <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} onSuccess={() => { }} />
+      <TrainTaskDrawer open={open} onCancel={onCancel} trainData={trainData} />
+      <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} trainData={trainData} onSuccess={() => { }} />
     </div>
   );
 };

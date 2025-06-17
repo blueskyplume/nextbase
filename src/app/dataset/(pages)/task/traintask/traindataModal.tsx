@@ -4,6 +4,8 @@ import { Form, Input, Button, Select, Typography, FormInstance, message } from '
 import { useState, useImperativeHandle, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { SupabaseClient, User } from '@supabase/supabase-js';
+import { type TRAIN_STATUS } from '@/constants';
+import { Option } from '@/types';
 const { Paragraph } = Typography;
 
 interface TrainTaskModalProps {
@@ -11,6 +13,7 @@ interface TrainTaskModalProps {
   user: User;
   options?: any;
   onSuccess: () => void;
+  trainData: any[];
   [key: string]: any
 }
 
@@ -38,30 +41,29 @@ const algorithmsParam: AlgorithmParam[] = [
   { name: 'warm_start', type: 'enum', default: 'False' }
 ];
 
-const TrainDataModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskModalProps) => {
+const TrainDataModal = ({ ref, supabase, user, options, onSuccess, trainData }: TrainTaskModalProps) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [traindataList, setTrainDataList] = useState<TrainData[]>([]);
   const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [traindataOption, setTrainDataOption] = useState<Option[]>([]);
+  const [formData, setFormData] = useState<any>();
   const traindataRef = useRef<FormInstance>(null);
 
   useImperativeHandle(ref, () => ({
     showModal: ({ form }: { form: any; }) => {
       setIsModalOpen(true);
-      if (form?.dataset_id) {
-        getTrainData(form.dataset_id);
-      }
+      setFormData(form);
+      const option = trainData
+        .filter(item => item.dataset_id === form?.dataset_id)
+        .map((item) => ({
+          label: item?.name,
+          value: item?.id
+        }));
+      console.log(form, option)
+      setTrainDataOption(option);
     }
   }));
-
-  const traindataOption = useMemo(() => {
-    if (!traindataList.length) return [];
-    return traindataList.map((item) => ({
-      label: item?.name,
-      value: item?.id
-    }))
-  }, [traindataList]);
 
   useEffect(() => {
     if (isModalOpen && traindataRef.current) {
@@ -75,24 +77,6 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
       });
     }
   }, [isModalOpen]);
-
-  const getTrainData = useCallback(async (dataset_id: string | number) => {
-    if (!dataset_id) return;
-
-    setSelectLoading(true);
-    try {
-      const { data } = await supabase
-        .from('anomaly_detection_train_data')
-        .select('id, name, dataset_id')
-        .eq('dataset_id', dataset_id);
-
-      setTrainDataList(data || []);
-    } catch (err) {
-      message.error(t('common.error'));
-    } finally {
-      setSelectLoading(false);
-    }
-  }, [supabase, t]);
 
   const renderItem = useCallback((param: any[]) => {
     return param.map((item) => (
@@ -114,8 +98,19 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
     setConfirmLoading(true);
     try {
       const data = await traindataRef.current?.validateFields();
-      console.log(user)
-      console.log(data);
+      console.log(JSON.stringify(data.params))
+      const { error } = await supabase.from('anomaly_detection_train_history').insert([
+        {
+          tenant_id: user.app_metadata.tenant_id,
+          job_id: formData.id,
+          train_data_id: data.train_data_id,
+          parameters: JSON.stringify(data.params),
+          status: 'not_started',
+          user_id: user.id
+        }
+      ]);
+      if (!error) return message.success(t('common.createdSuccess'));
+      message.error(error.message);
     } catch (e) {
       console.log(e);
     } finally {
@@ -143,12 +138,21 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
     >
       <Form ref={traindataRef} layout="vertical">
         <Form.Item
-          name='traindata_id'
+          name='train_data_id'
           label={t('traintask.trainfile')}
           rules={[{ required: true, message: t('common.inputMsg') }]}
         >
           <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption} />
         </Form.Item>
+        <Form.Item
+            name='algorithms'
+            label={t('traintask.algorithms')}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <Select placeholder={t('common.inputMsg')} onChange={(value) => { console.log(value) }} options={[
+              { value: 'IsolationForst', label: '孤立森林' },
+            ]} />
+          </Form.Item>
         {renderItem(algorithmsParam)}
       </Form>
     </OperateModal>

@@ -19,7 +19,9 @@
     "detail": "详情",
     "status": "状态",
     "creator": "创建人",
-    "createdAt": "创建时间"
+    "createdAt": "创建时间",
+    "createdSuccess": "创建成功",
+    "updateSuccess": "更新成功"
   },
   "datasets": {
     "addform": "新增数据集",
@@ -53,7 +55,7 @@
     "executionScore": "执行得分",
     "modelDownload": "模型下载",
     "selectDatasets": "请选择数据训练集",
-    "selectTraindata": "请选择训练数据文件",
+    "selectTraindata": "请选择训练数据参数",
     "deleteTraintask": "确定要删除该训练任务吗？"
   }
 }

@@ -2,124 +2,48 @@ import { Button, Drawer } from "antd";
 import { ColumnItem, TableDataItem } from "@/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import { useState, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { supabase } from "@/utils/supabaseClient";
 
-const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => void }) => {
+const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCancel: () => void, trainData: any[] }) => {
   const { t } = useTranslation();
-  const [childrenOpen, setChildrenOpen] = useState<boolean>(false);
-  const [tableData, setTableData] = useState<TableDataItem[]>([
-    {
-      key: '1',
-      name: '单指标异常检测',
-      type: '单指标异常检测',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95,
-      tarindata: '数据集1',
-      algorithm: '孤立森林',
-      params: {
-        "n_estimators": 100,
-        "max_samples": "auto",
-        "contamination": "auto",
-        "max_features": 1,
-        "bootstrap": "False",
-        "n_jobs": "None",
-        "random_state": "None",
-        "verbose": 0,
-        "warm_start": "False"
-      }
-    },
-    {
-      key: '2',
-      name: '单指标异常检测',
-      type: '单指标异常检测',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95,
-      tarindata: '数据集1',
-      algorithm: '孤立森林',
-      params: {
-        "n_estimators": 100,
-        "max_samples": "auto",
-        "contamination": "auto",
-        "max_features": 1,
-        "bootstrap": "False",
-        "n_jobs": "None",
-        "random_state": "None",
-        "verbose": 0,
-        "warm_start": "False"
-      }
-    },
-    {
-      key: '3',
-      name: '单指标异常检测',
-      type: '单指标异常检测',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95,
-      tarindata: '数据集1',
-      algorithm: '孤立森林',
-      params: {
-        "n_estimators": 100,
-        "max_samples": "auto",
-        "contamination": "auto",
-        "max_features": 1,
-        "bootstrap": "False",
-        "n_jobs": "None",
-        "random_state": "None",
-        "verbose": 0,
-        "warm_start": "False"
-      }
-    },
-    {
-      key: '4',
-      name: '单指标异常检测',
-      type: '单指标异常检测',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95,
-      tarindata: '数据集1',
-      algorithm: '孤立森林',
-      params: {
-        "n_estimators": 100,
-        "max_samples": "auto",
-        "contamination": "auto",
-        "max_features": 1,
-        "bootstrap": "False",
-        "n_jobs": "None",
-        "random_state": "None",
-        "verbose": 0,
-        "warm_start": "False"
-      }
-    },
-    {
-      key: '5',
-      name: '单指标异常检测',
-      type: '单指标异常检测',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95,
-      tarindata: '数据集1',
-      algorithm: '孤立森林',
-      params: {
-        "n_estimators": 100,
-        "max_samples": "auto",
-        "contamination": "auto",
-        "max_features": 1,
-        "bootstrap": "False",
-        "n_jobs": "None",
-        "random_state": "None",
-        "verbose": 0,
-        "warm_start": "False"
-      }
-    },
-  ]);
-  const columns: ColumnItem[] = [
+  const [tableData, setTableData] = useState<TableDataItem[]>([]);
+
+  // 使用 useCallback 缓存 renderColumns 函数
+  const renderColumns = useCallback((params: Object) => {
+    const data = Object.keys(params);
+    return data.map((value, index) => ({
+      title: value,
+      key: `param-${value}-${index}`, // 确保 key 唯一
+      dataIndex: value,
+    }));
+  }, []);
+
+  // 使用 useCallback 缓存 expandedRowRender 函数
+  const expandedRowRender = useCallback((record: any) => {
+    return (
+      <CustomTable
+        rowKey="key"
+        loading={record.loading}
+        columns={renderColumns(record.parameters)}
+        dataSource={[{ ...record.parameters, key: `params-${record.id}` }]}
+        pagination={false}
+        size="small"
+      />
+    );
+  }, [renderColumns]);
+
+  // 使用 useMemo 缓存 expandable 配置
+  const expandableConfig = useMemo(() => ({
+    expandedRowRender,
+    rowExpandable: (record: any) => record.parameters && Object.keys(record.parameters).length > 0,
+  }), [expandedRowRender]);
+
+  const columns: ColumnItem[] = useMemo(() => [
     {
       title: t('common.name'),
       dataIndex: 'name',
       key: 'name',
-      // fixed: 'left',
       width: 120
     },
     {
@@ -133,7 +57,8 @@ const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => vo
       dataIndex: 'started_at',
       key: 'started_at',
       align: 'center',
-      width: 150
+      width: 150,
+      render: (_, record) => (<p>{record?.started_at ? new Date(record?.started_at).toLocaleString() : '--'}</p>),
     },
     {
       title: t('traintask.executionStatus'),
@@ -145,13 +70,15 @@ const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => vo
       title: t('traintask.executionScore'),
       dataIndex: 'score',
       key: 'score',
-      width: 100
+      width: 100,
+      render: (_, record) => (<p>{record?.score ? record?.score.toFixed(4) : '--'}</p>),
     },
     {
       title: t('traintask.traindata'),
-      dataIndex: 'traindata',
-      key: 'traindata',
-      width: 100
+      dataIndex: 'train_data_id',
+      key: 'train_data_id',
+      width: 100,
+      render: (_, record) => (<p>{trainData?.find(item => item.id === record?.train_data_id)?.name || '--'}</p>)
     },
     {
       title: t('traintask.algorithms'),
@@ -161,71 +88,80 @@ const TrainTaskDrawer = ({ open, onCancel }: { open: boolean, onCancel: () => vo
     },
     {
       title: t('common.action'),
-      key: 'action',
       dataIndex: 'action',
+      key: 'action',
       width: 120,
       align: 'center',
-      // fixed: 'right',
-      render: (_, record) => {
-        return (
-          <>
-            <Button type="link">{t('traintask.modelDownload')}</Button>
-          </>
-        )
-      },
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+        >
+          {t('traintask.modelDownload')}
+        </Button>
+      ),
     }
-  ];
+  ], [t]);
 
-  const renderColumns = (params: Object) => {
-    const data = Object.keys(params);
-    return data.map(value => ({
-      title: value,
-      key: value,
-      dataIndex: value
-    }))
-  };
+  const getHistoryData = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('anomaly_detection_train_history')
+        .select(`*, anomaly_detection_train_jobs (name)`)
+        .order('created_at', { ascending: false });
 
-  const showDrawer = () => {
-    setChildrenOpen(true);
-  };
+      if (error) {
+        console.error('Failed to fetch history:', error);
+        return;
+      }
 
-  const onClose = () => {
-    setChildrenOpen(false);
-  };
+      if (data) {
+        const processedData = data.map((item, index) => ({
+          ...item,
+          key: `history-${item.id || index}`, // 确保每行有唯一 key
+          parameters: item.parameters ? JSON.parse(item.parameters) : {},
+          name: item.anomaly_detection_train_jobs?.name || '',
+          loading: false, // 修正字段名
+        }));
+        setTableData(processedData);
+      }
+    } catch (error) {
+      console.error('Error fetching history data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      getHistoryData();
+    }
+  }, [open, getHistoryData]);
 
   return (
-    <>
-      <Drawer
-        width={800}
-        title={t('traintask.history')}
-        open={open}
-        onClose={onCancel}
-        footer={(
-          <Button onClick={onCancel}>{t('common.cancel')}</Button>
-        )}
-      >
-        <CustomTable
-          scroll={{ y: 'calc(100vh - 250px)' }}
-          columns={columns}
-          dataSource={tableData}
-          expandable={{
-            expandedRowRender: (record) => {
-              console.log(record, 1)
-              return (
-                <CustomTable
-                  key={record.key}
-                  scroll={{ x: 'calc(100vh - 480px)' }}
-                  loading={record.lording}
-                  columns={renderColumns(record.params)}
-                  dataSource={[record.params]}
-                />
-              )
-            },
-          }}
-        />
-      </Drawer>
-    </>
-  )
+    <Drawer
+      width={800}
+      title={t('traintask.history')}
+      open={open}
+      onClose={onCancel}
+      footer={
+        <Button onClick={onCancel}>
+          {t('common.cancel')}
+        </Button>
+      }
+    >
+      <CustomTable
+        rowKey="key"
+        scroll={{ y: 'calc(100vh - 280px)' }}
+        columns={columns}
+        dataSource={tableData}
+        expandable={expandableConfig}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+      />
+    </Drawer>
+  );
 };
 
 export default TrainTaskDrawer;
