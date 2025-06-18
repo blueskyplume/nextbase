@@ -16,7 +16,8 @@ import '@ant-design/v5-patch-for-react-19';
 import sideMenuStyle from './components/index.module.scss';
 
 const AnnotationIntro = memo(() => {
-  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const folder_name = searchParams.get('folder_name');
   return (
     <div className="flex h-[58px] flex-col items-center justify-center">
       <div className='flex justify-center mb-2'>
@@ -25,7 +26,7 @@ const AnnotationIntro = memo(() => {
           className="mr-2"
           style={{ height: '22px', width: '22px', color: 'blue' }}
         ></Icon>
-        <h1 className="text-center text-lg leading-[24px]">{t('traintask.datasets')}</h1>
+        <h1 className="text-center text-lg leading-[24px]">{folder_name}</h1>
       </div>
     </div>
   );

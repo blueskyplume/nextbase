@@ -18,6 +18,7 @@ const Aside = ({ children, menuItems, loading, isChange, onChange }: { children:
   const searchParams = useSearchParams();
   const folder_id = searchParams.get('folder_id') || '';
   const folder_name = searchParams.get('folder_name') || '';
+  const description = searchParams.get('description');
   const router = useRouter();
 
   const buildUrlWithParams = (id: number) => {
@@ -42,12 +43,12 @@ const Aside = ({ children, menuItems, loading, isChange, onChange }: { children:
           return new Promise(async (resolve) => {
             resolve(true);
             onChange(false);
-            router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
+            router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
           })
         }
       })
     } else {
-      router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
+      router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
     }
   };
 

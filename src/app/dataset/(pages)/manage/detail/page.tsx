@@ -25,6 +25,9 @@ interface TableData {
 const Detail = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const folder_id = searchParams.get('folder_id');
+  const folder_name = searchParams.get('folder_name');
+  const description = searchParams.get('description');
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TableData[]>([]);
@@ -100,9 +103,9 @@ const Detail = () => {
                 className="mr-2"
                 style={{ height: '22px', width: '22px', color: '#1976d2' }}
               />
-              <h1 className="text-lg font-bold leading-[24px] text-gray-800">Weops</h1>
+              <h1 className="text-lg font-bold leading-[24px] text-gray-800">{folder_name}</h1>
             </div>
-            <p className="text-xs text-gray-500">训练文件列表</p>
+            <p className="text-xs text-gray-500">{description}</p>
           </div>
           <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
             <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
@@ -162,9 +165,7 @@ const Detail = () => {
   };
 
   const toAnnotation = (data: any) => {
-    const folder_id = searchParams.get('folder_id');
-    const folder_name = searchParams.get('folder_name');
-    router.push(`/dataset/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}`);
+    router.push(`/dataset/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
   };
 
   const handleChange = (value: any) => {

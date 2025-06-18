@@ -98,7 +98,7 @@ const DatasetManagePage = () => {
 
   const navigateToNode = (item: any) => {
     router.push(
-      `/dataset/manage/detail?folder_id=${item?.id}&folder_name=${item.name}`
+      `/dataset/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}`
     );
   };
 
