@@ -2,96 +2,166 @@ import { Button, Drawer } from "antd";
 import { ColumnItem, TableDataItem } from "@/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { supabase } from "@/utils/supabaseClient";
 
-const TrainTaskDrawer = () => {
+const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCancel: () => void, trainData: any[] }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [tableData, setTableData] = useState<TableDataItem[]>([
+  const [tableData, setTableData] = useState<TableDataItem[]>([]);
+
+  // 使用 useCallback 缓存 renderColumns 函数
+  const renderColumns = useCallback((params: Object) => {
+    const data = Object.keys(params);
+    return data.map((value, index) => ({
+      title: value,
+      key: `param-${value}-${index}`, // 确保 key 唯一
+      dataIndex: value,
+    }));
+  }, []);
+
+  // 使用 useCallback 缓存 expandedRowRender 函数
+  const expandedRowRender = useCallback((record: any) => {
+    return (
+      <CustomTable
+        rowKey="key"
+        loading={record.loading}
+        columns={renderColumns(record.parameters)}
+        dataSource={[{ ...record.parameters, key: `params-${record.id}` }]}
+        pagination={false}
+        size="small"
+      />
+    );
+  }, [renderColumns]);
+
+  // 使用 useMemo 缓存 expandable 配置
+  const expandableConfig = useMemo(() => ({
+    expandedRowRender,
+    rowExpandable: (record: any) => record.parameters && Object.keys(record.parameters).length > 0,
+  }), [expandedRowRender]);
+
+  const columns: ColumnItem[] = useMemo(() => [
     {
-      key: '1',
-      started_at: '2024-01-15 14:30:25',
-      status: '已完成',
-      score: 0.95
+      title: t('common.name'),
+      dataIndex: 'name',
+      key: 'name',
+      width: 120
     },
     {
-      key: '2',
-      started_at: '2024-01-14 09:15:10',
-      status: '运行中',
-      score: 0.87
+      title: t('common.type'),
+      dataIndex: 'type',
+      key: 'type',
+      width: 120
     },
-    {
-      key: '3',
-      started_at: '2024-01-13 16:45:33',
-      status: '已完成',
-      score: 0.92
-    },
-    {
-      key: '4',
-      started_at: '2024-01-12 11:20:45',
-      status: '失败',
-      score: 0.0
-    },
-    {
-      key: '5',
-      started_at: '2024-01-11 13:55:12',
-      status: '已完成',
-      score: 0.89
-    }
-  ]);
-  const columns: ColumnItem[] = [
     {
       title: t('traintask.executionTime'),
       dataIndex: 'started_at',
-      key: 'started_at'
+      key: 'started_at',
+      align: 'center',
+      width: 150,
+      render: (_, record) => (<p>{record?.started_at ? new Date(record?.started_at).toLocaleString() : '--'}</p>),
     },
     {
       title: t('traintask.executionStatus'),
       dataIndex: 'status',
-      key: 'status'
+      key: 'status',
+      width: 100
     },
     {
       title: t('traintask.executionScore'),
       dataIndex: 'score',
-      key: 'score'
+      key: 'score',
+      width: 100,
+      render: (_, record) => (<p>{record?.score ? record?.score.toFixed(4) : '--'}</p>),
+    },
+    {
+      title: t('traintask.traindata'),
+      dataIndex: 'train_data_id',
+      key: 'train_data_id',
+      width: 100,
+      render: (_, record) => (<p>{trainData?.find(item => item.id === record?.train_data_id)?.name || '--'}</p>)
+    },
+    {
+      title: t('traintask.algorithms'),
+      dataIndex: 'algorithms',
+      key: 'algorithms',
+      width: 100
     },
     {
       title: t('common.action'),
-      key: 'action',
       dataIndex: 'action',
-      width: 200,
-      fixed: 'right',
-      render: (_, record) => {
-        return (
-          <>
-            <Button type="link">{t('common.detail')}</Button>
-          </>
-        )
-      },
+      key: 'action',
+      width: 120,
+      align: 'center',
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+        >
+          {t('traintask.modelDownload')}
+        </Button>
+      ),
     }
-  ];
+  ], [t]);
 
-  const showDrawer = () => {
-    setOpen(true);
-  };
+  const getHistoryData = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('anomaly_detection_train_history')
+        .select(`*, anomaly_detection_train_jobs (name)`)
+        .order('created_at', { ascending: false });
 
-  const onClose = () => {
-    setOpen(false);
-  };
+      if (error) {
+        console.error('Failed to fetch history:', error);
+        return;
+      }
+
+      if (data) {
+        const processedData = data.map((item, index) => ({
+          ...item,
+          key: `history-${item.id || index}`, // 确保每行有唯一 key
+          parameters: item.parameters ? JSON.parse(item.parameters) : {},
+          name: item.anomaly_detection_train_jobs?.name || '',
+          loading: false, // 修正字段名
+        }));
+        setTableData(processedData);
+      }
+    } catch (error) {
+      console.error('Error fetching history data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      getHistoryData();
+    }
+  }, [open, getHistoryData]);
 
   return (
-    <>
-      <Drawer
-        title={t('traintask.history')}
-        open={open}
-      >
-        <CustomTable
-          columns={columns}
-          dataSource={tableData}
-        />
-      </Drawer>
-    </>
-  )
+    <Drawer
+      width={800}
+      title={t('traintask.history')}
+      open={open}
+      onClose={onCancel}
+      footer={
+        <Button onClick={onCancel}>
+          {t('common.cancel')}
+        </Button>
+      }
+    >
+      <CustomTable
+        rowKey="key"
+        scroll={{ y: 'calc(100vh - 280px)' }}
+        columns={columns}
+        dataSource={tableData}
+        expandable={expandableConfig}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+      />
+    </Drawer>
+  );
 };
 
 export default TrainTaskDrawer;

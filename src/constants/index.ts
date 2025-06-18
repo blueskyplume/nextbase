@@ -6,6 +6,9 @@ const LEVEL_MAP: LevelMap = {
   warning: '#FFAD42',
 };
 
+type TRAIN_STATUS = 'not_started' | 'in_progress' | 'completed' | 'failed';
+
 export {
-  LEVEL_MAP
+  LEVEL_MAP,
+  type TRAIN_STATUS
 }

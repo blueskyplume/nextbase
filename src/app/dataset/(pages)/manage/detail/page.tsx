@@ -4,7 +4,7 @@ import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import { ColumnItem } from '@/types';
-import { ModalRef } from '../types';
+import { ModalRef } from '@/types';
 import { Button, TablePaginationConfig, Input, Popconfirm, message } from 'antd';
 import { supabase } from '@/utils/supabaseClient';
 import '@ant-design/v5-patch-for-react-19';
