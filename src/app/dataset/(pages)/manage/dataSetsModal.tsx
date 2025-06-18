@@ -8,12 +8,12 @@ import { SupabaseClient, User } from '@supabase/supabase-js';
 interface DatasetModalProps {
   supabase: SupabaseClient;
   user: User;
-  options: any,
+  options?: any,
   onSuccess: () => void;
   [key:string]: any
 }
 
-const DatasetModal = ({ ref, supabase, user, options, onSuccess }: DatasetModalProps) => {
+const DatasetModal = ({ ref, supabase, user, onSuccess }: DatasetModalProps) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('edit');

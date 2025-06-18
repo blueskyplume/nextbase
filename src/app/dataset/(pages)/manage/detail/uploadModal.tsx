@@ -3,10 +3,10 @@ import OperateModal from '@/components/operate-modal';
 import { useState, useImperativeHandle, useContext } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { Upload, Button, message } from 'antd';
-import type { UploadProps } from 'antd'
+import type { UploadFile, UploadProps } from 'antd'
 import { InboxOutlined } from '@ant-design/icons';
 import { supabase } from '@/utils/supabaseClient';
-import { ModalConfig } from '@/types';
+import { ModalConfig, TableData } from '@/types';
 import { UserInfoContext } from '@/context/userInfo';
 import { User } from '@supabase/supabase-js';
 const { Dragger } = Upload;
@@ -16,11 +16,11 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
   const { user } = useContext(UserInfoContext);
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [fileList, setFileList] = useState<any>([]);
-  const [formData, setFormData] = useState<any>();
+  const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
+  const [formData, setFormData] = useState<TableData>();
 
   useImperativeHandle(ref, () => ({
-    showModal: ({ type, form }: ModalConfig) => {
+    showModal: ({ form }: ModalConfig) => {
       setVisiable(true);
       setFormData(form);
       console.log(form);
@@ -49,23 +49,22 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
 
   const handleSubmit = async () => {
     setConfirmLoading(true);
-    const file = fileList[0];
+    const file: UploadFile<any> = fileList[0];
     const { id, app_metadata } = user as User;
-    console.log(id, app_metadata)
-    if(!file) {
+    if(!file?.originFileObj) {
       setConfirmLoading(false);
       return message.error('请上传文件');
     }
     const { data, error } = await supabase.storage
       .from('datasets')
-      .upload(`${formData.dataset_id}/${file.name}`, file.originFileObj, {
+      .upload(`${formData?.dataset_id}/${file.name}`, file.originFileObj, {
         cacheControl: '3600',
         upsert: false
       });
     if (!error) {
       await supabase.from('anomaly_detection_train_data').insert([
         {
-          dataset_id: formData.dataset_id,
+          dataset_id: formData?.dataset_id,
           tenant_id: app_metadata.tenant_id,
           user_id: id,
           name: file.name,

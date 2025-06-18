@@ -196,3 +196,20 @@ export interface LabelData {
   value: number,
   label?: number
 }
+
+export interface TableData {
+  id: number,
+  name: string,
+  anomaly?: number,
+  [key: string]: any
+}
+
+export interface DataSet {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  creator: string;
+  user_id: string;
+  tenant_id: string;
+}
