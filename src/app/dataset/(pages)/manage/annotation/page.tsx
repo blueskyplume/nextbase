@@ -1,34 +1,63 @@
 "use client";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { useSearchParams } from 'next/navigation';
+import { Button, message, Spin, TablePaginationConfig } from "antd";
+import { cloneDeep } from "lodash";
 import { supabase } from "@/utils/supabaseClient";
 import Aside from "./components/aside";
-import sideMenuStyle from './components/index.module.scss';
 import Icon from '@/components/icon';
-import { ColumnItem } from '@/types';
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useMemo } from "react";
 import LineChart from "@/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
+import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination, LabelData } from '@/types';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
-import { Button, message, Spin, TablePaginationConfig } from "antd";
+import { useTranslation } from "@/utils/i18n";
 import { exportToCSV } from "@/utils/common";
 import '@ant-design/v5-patch-for-react-19';
-import { cloneDeep } from "lodash";
+import sideMenuStyle from './components/index.module.scss';
+
+const AnnotationIntro = memo(() => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-[58px] flex-col items-center justify-center">
+      <div className='flex justify-center mb-2'>
+        <Icon
+          type="shiyongwendang"
+          className="mr-2"
+          style={{ height: '22px', width: '22px', color: 'blue' }}
+        ></Icon>
+        <h1 className="text-center text-lg leading-[24px]">{t('traintask.datasets')}</h1>
+      </div>
+    </div>
+  );
+});
+
+const Topsection = memo(() => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col h-[90px] p-4 overflow-hidden">
+      <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
+      <p className="text-xs overflow-hidden w-full min-w-[1000px] text-gray-500 mt-[8px]">
+        {t('datasets.detail')}
+      </p>
+    </div>
+  );
+});
 
 const AnnotationPage = () => {
   const searchParams = useSearchParams();
   const file_id = searchParams.get('id');
-  // const folder_name = searchParams.get('folder_name');
+  const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const [menuItems, setMenuItems] = useState<any>([]);
-  const [tableData, setTableData] = useState<any>([]);
-  // const [pagedData, setPageData] = useState<any>([]);
-  const [currentFileData, setCurrentFileData] = useState<any>([]);
+  const [menuItems, setMenuItems] = useState<AnomalyTrainData[]>([]);
+  const [tableData, setTableData] = useState<TableDataItem[]>([]);
+  const [currentFileData, setCurrentFileData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [chartLoading, setChartLoading] = useState<boolean>(false);
-  const [tableLoading, setTableLoading] = useState<boolean>(false);
+  // const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
-  const [flag, setFlag] = useState<boolean>(false);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({
+  const [isChange, setIsChange] = useState<boolean>(false);
+  const [flag, setFlag] = useState<boolean>(true);
+  const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
     pageSize: 20,
@@ -38,82 +67,54 @@ const AnnotationPage = () => {
     endIndex: 0,
   });
 
-  const AnnotationIntro = () => {
-    const name = '数据集';
-    return (
-      <div className="flex h-[58px] flex-col items-center justify-center">
-        <div className='flex justify-center mb-2'>
-          <Icon
-            type="shiyongwendang"
-            className="mr-2"
-            style={{ height: '22px', width: '22px', color: 'blue' }}
-          ></Icon>
-          <h1 className="text-center text-lg leading-[24px]">{name}</h1>
-        </div>
-      </div>
-    );
-  };
-
-  const Topsection = () => {
-    const getTitle = () => {
-      return '文档列表';
-    };
-    return (
-      <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-        <h1 className="text-lg font-bold text-gray-900 mb-1">{getTitle()}</h1>
-        <p className="text-xs overflow-hidden w-full min-w-[1000px] text-gray-500 mt-[8px]">
-          {'支持上传时序数据，并为这些数据进行打标，以便后续进行模型训练。'}
-        </p>
-      </div>
-    );
-  };
-
-  const colmuns: ColumnItem[] = [
-    {
-      title: '时间',
-      key: 'timestamp',
-      dataIndex: 'timestamp',
-      width: 100,
-      align: 'center',
-      render: (_, record) => {
-        const time = new Date(record.timestamp * 1000).toISOString();
-        return <p>{convertToLocalizedTime(time.toString(), 'YYYY-MM-DD HH:mm:ss')}</p>;
+  const colmuns: ColumnItem[] = useMemo(() => {
+    return [
+      {
+        title: t('common.time'),
+        key: 'timestamp',
+        dataIndex: 'timestamp',
+        width: 100,
+        align: 'center',
+        render: (_, record) => {
+          const time = new Date(record.timestamp * 1000).toISOString();
+          return <p>{convertToLocalizedTime(time.toString(), 'YYYY-MM-DD HH:mm:ss')}</p>;
+        },
       },
-    },
-    {
-      title: '值',
-      key: 'value',
-      dataIndex: 'value',
-      align: 'center',
-      width: 40,
-      render: (_, record) => {
-        const value = Number(record.value).toFixed(2);
-        return <p>{value}</p>
+      {
+        title: t('datasets.value'),
+        key: 'value',
+        dataIndex: 'value',
+        align: 'center',
+        width: 40,
+        render: (_, record) => {
+          const value = Number(record.value).toFixed(2);
+          return <p>{value}</p>
+        },
       },
-    },
-    {
-      title: '标注结果',
-      key: 'label',
-      dataIndex: 'label',
-      width: 100,
-      align: 'center',
-      hidden: true
-    },
-    {
-      title: '操作',
-      key: 'action',
-      dataIndex: 'action',
-      align: 'center',
-      width: 40,
-      render: (_, record) => {
-        return (
-          <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
-            删除
-          </Button>
-        )
+      {
+        title: t('datasets.labelResult'),
+        key: 'label',
+        dataIndex: 'label',
+        width: 100,
+        align: 'center',
+        hidden: true
+      },
+      {
+        title: t('common.action'),
+        key: 'action',
+        dataIndex: 'action',
+        align: 'center',
+        width: 40,
+        render: (_, record) => {
+          return (
+            <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
+              {t('common.delete')}
+            </Button>
+          )
+        }
       }
-    }
-  ];
+    ];
+  }, [t, convertToLocalizedTime]);
 
   const pagedData = useMemo(() => {
     if (!tableData.length) return [];
@@ -137,15 +138,12 @@ const AnnotationPage = () => {
   }, [tableData]);
 
   useEffect(() => {
-    if (currentFileData.length) {
-      if (flag) {
+    if (currentFileData.length && flag) {
+        setTimeline({
+          startIndex: 0,
+          endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
+        });
         setFlag(false);
-        return;
-      }
-      setTimeline({
-        startIndex: 0,
-        endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
-      });
     }
   }, [currentFileData]);
 
@@ -182,16 +180,16 @@ const AnnotationPage = () => {
       });
     }
     return data;
-  }
+  };
 
-  const getCurrentFileData = async () => {
+  const getCurrentFileData = useCallback(async () => {
     setLoading(true);
     setChartLoading(true);
-    setTableLoading(true);
+    // setTableLoading(true);
     const id = searchParams.get('id');
     const folder_id = searchParams.get('folder_id');
-
     const fileList = await supabase.from('anomaly_detection_train_data').select().eq('dataset_id', folder_id);
+
     if (fileList.data) {
       const item = fileList.data.find((k: any) => k.id == id);
       const fileData = await supabase.storage.from('datasets').download(item.storage_path + `?t=${Date.now()}`);
@@ -201,16 +199,14 @@ const AnnotationPage = () => {
       const data = fileReader(text as string);
       setCurrentFileData(data);
       setChartLoading(false);
-      setTableLoading(false);
+      // setTableLoading(false);
     } else if (fileList.error) {
-      message.error(fileList.error.message)
+      message.error(fileList.error.message);
     }
+  }, [searchParams, supabase]);
 
-  };
-
-  const onXRangeChange = (data: any[]) => {
-    console.log('test')
-    setFlag(true);
+  const onXRangeChange = useCallback((data: any[]) => {
+    if (!isChange) setIsChange(true);
     setChartLoading(true);
     if (!currentFileData.length) {
       setChartLoading(false);
@@ -238,11 +234,11 @@ const AnnotationPage = () => {
     } finally {
       setChartLoading(false);
     }
-  };
+  }, [currentFileData]);
 
-  const onAnnotationClick = (value: any[]) => {
+  const onAnnotationClick = useCallback((value: any[]) => {
     if (!value) return;
-    setFlag(true);
+    if (!isChange) setIsChange(true);
     setChartLoading(true);
     try {
       const _data: any[] = cloneDeep(currentFileData);
@@ -259,22 +255,22 @@ const AnnotationPage = () => {
     } finally {
       setChartLoading(false);
     }
-  };
+  }, [currentFileData]);
 
-  const handleChange = (value: any) => {
+  const handleChange = (value: TablePaginationConfig) => {
     setPagination((prev) => {
       return {
-        current: value.current,
-        pageSize: value.pageSize,
-        total: prev.total,
+        current: value.current as number,
+        pageSize: value.pageSize as number,
+        total: prev.total as number,
       }
     })
   };
 
-  const handleDelete = (record: any) => {
-    setFlag(true);
+  const handleDelete = useCallback((record: ColumnItem) => {
+    setIsChange(true);
     setChartLoading(true);
-    setTableLoading(true);
+    // setTableLoading(true);
     try {
       const newData = currentFileData.map((item: any) =>
         item.timestamp === record.timestamp ? { ...item, label: 0 } : item
@@ -284,49 +280,51 @@ const AnnotationPage = () => {
       setTableData(_tableData);
     } finally {
       setChartLoading(false);
-      setTableLoading(false);
+      // setTableLoading(false);
     }
-  };
+  }, [currentFileData]);
 
-  const handleSava = async () => {
+  const handleSava = useCallback(async () => {
     setSaveLoading(true);
     try {
-      const { data, error } = await supabase.from('anomaly_detection_train_data').select().eq('id', file_id);
+      const { data } = await supabase.from('anomaly_detection_train_data').select().eq('id', file_id);
       if (data?.length) {
         const name = data[0].name;
         const filepath = data[0].storage_path;
-        console.log(currentFileData)
         const blob = exportToCSV(currentFileData, colmuns.slice(0, colmuns.length - 1), name);
         const updateFile = await supabase.storage.from('datasets').update(filepath, blob, {
           cacheControl: '3600',
           upsert: true
         });
+
         if (updateFile.error) {
-          console.log(updateFile.error);
-          return;
+          return message.error(updateFile.error.message);
         }
-        const updateRowData = await supabase.from('anomaly_detection_train_data').update({
+
+        await supabase.from('anomaly_detection_train_data').update({
           metadata: JSON.stringify({
             length: tableData.length
           })
         }).eq('id', file_id);
-        message.success('保存成功');
+        message.success(t('datasets.saveSuccess'));
         getCurrentFileData();
       } else {
-        message.error('保存出错');
+        message.error(t('datasets.saveError'));
       }
     } finally {
       setSaveLoading(false);
+      setIsChange(false);
     }
-  };
+  }, [supabase, currentFileData, colmuns]);
 
   const handleCancel = () => {
     getCurrentFileData();
+    setIsChange(false);
   };
 
   const onTimeLineChange = (value: any) => {
     setTimeline(value);
-  }
+  };
 
   return (
     <div className={`flex w-full h-full text-sm p-[10px] ${sideMenuStyle.sideMenuLayout} grow`}>
@@ -334,6 +332,7 @@ const AnnotationPage = () => {
         <Aside
           loading={loading}
           menuItems={menuItems}
+          isChange={isChange}
         >
           <AnnotationIntro />
         </Aside>
@@ -343,8 +342,8 @@ const AnnotationPage = () => {
           </div>
           <div className={`py-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}>
             <div className="flex justify-end gap-2 mb-4">
-              <Button className="mr-4" onClick={handleCancel}>取消</Button>
-              <Button type="primary" loading={saveLoading} onClick={handleSava}>保存</Button>
+              <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
+              <Button type="primary" loading={saveLoading} onClick={handleSava}>{t('common.save')}</Button>
             </div>
             <Spin className="w-full" spinning={chartLoading}>
               <div className="flex justify-between">
@@ -367,7 +366,7 @@ const AnnotationPage = () => {
                     pageStyle="absolute right-0 flex justify-end mt-[5px]"
                     columns={colmuns}
                     dataSource={pagedData}
-                    loading={tableLoading}
+                    // loading={tableLoading}
                     pagination={pagination}
                     onChange={handleChange}
                   />

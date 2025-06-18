@@ -1,11 +1,10 @@
 'use client'
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
-import { ColumnItem } from '@/types';
-import { ModalRef } from '@/types';
-import { Button, TablePaginationConfig, Input, Popconfirm, message } from 'antd';
+import { ColumnItem, ModalRef, Pagination } from '@/types';
+import { Button, Input, Popconfirm, message } from 'antd';
 import { supabase } from '@/utils/supabaseClient';
 import '@ant-design/v5-patch-for-react-19';
 import { useTranslation } from '@/utils/i18n';
@@ -31,10 +30,10 @@ const Detail = () => {
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({
+  const [pagination, setPagination] = useState<Pagination>({
     current: 1,
-    total: 1,
-    pageSize: 5,
+    total: 0,
+    pageSize: 10,
   });
 
   const columns: ColumnItem[] = [
@@ -103,12 +102,12 @@ const Detail = () => {
               />
               <h1 className="text-lg font-bold leading-[24px] text-gray-800">Weops</h1>
             </div>
-            <p className="text-xs text-gray-500">这是知识库的...</p>
+            <p className="text-xs text-gray-500">训练文件列表</p>
           </div>
           <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
-            <h1 className="text-lg font-bold text-gray-900 mb-1">文档列表</h1>
+            <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
             <p className="text-xs text-gray-500">
-              支持上传时序数据，并为这些数据进行打标，以便后续进行模型训练。
+              {t('datasets.detail')}
             </p>
           </div>
         </div>
@@ -116,38 +115,24 @@ const Detail = () => {
     );
   };
 
-  const pagedData = useMemo(() => {
-    if (!tableData.length) return [];
-    return tableData.slice(
-      (pagination.current! - 1) * pagination.pageSize!,
-      pagination.current! * pagination.pageSize!
-    );
-  }, [tableData, pagination.current, pagination.pageSize]);
-
   useEffect(() => {
     getDataset();
-  }, []);
-
-  useEffect(() => {
-    setPagination((prev) => {
-      return {
-        ...prev,
-        total: tableData.length
-      }
-    })
-  }, [pagedData]);
+  }, [pagination.current, pagination.pageSize]);
 
   const getDataset = async (search: string = '') => {
     setLoading(true);
-    const { data } = await supabase.from('anomaly_detection_train_data')
-      .select()
+    const from = (pagination.current - 1) * pagination.pageSize;
+    const to = from + pagination.pageSize - 1;
+    const { data, count } = await supabase.from('anomaly_detection_train_data')
+      .select(`*`, { count: 'exact' })
       .eq('dataset_id', searchParams.get('folder_id'))
-      .ilike('name', `%${search}%`);
+      .ilike('name', `%${search}%`)
+      .range(from, to);
     setTableData(data as TableData[]);
     setPagination((prev) => {
       return {
         ...prev,
-        total: data?.length
+        total: count || 0
       }
     });
     setLoading(false);
@@ -221,7 +206,7 @@ const Detail = () => {
                   rowKey="id"
                   className="mt-3"
                   scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
-                  dataSource={pagedData}
+                  dataSource={tableData}
                   columns={columns}
                   pagination={pagination}
                   loading={loading}

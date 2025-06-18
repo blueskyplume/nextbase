@@ -166,3 +166,33 @@ export interface UserProfile {
   first_name: string,
   last_name: string
 }
+
+export interface Pagination {
+  current: number;
+  total: number;
+  pageSize: number;
+}
+
+export enum TrainingStatus {
+  'not_stared',
+  'in_progress',
+  'completed',
+  'failed'
+}
+
+export interface AnomalyTrainData {
+  id: number;
+  tenant_id: number;
+  dataset_id: number;
+  name: string,
+  storage_path: string,
+  metadata: any;
+  user_id: string;
+  latest_status?: TrainingStatus;
+}
+
+export interface LabelData {
+  timestamp: string,
+  value: number,
+  label?: number
+}

@@ -6,6 +6,7 @@ import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import DatasetModal from './dataSetsModal';
 import { ModalRef, UserProfile } from '@/types';
+import { getName } from '@/utils/common';
 import '@ant-design/v5-patch-for-react-19';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -57,15 +58,6 @@ const DatasetManagePage = () => {
       ),
     },
   ];
-
-  const getName = (targetID: string, data: UserProfile[] | null) => {
-    if (data) {
-      const target: UserProfile = data.find(u => u.id == targetID) as UserProfile;
-      const name = target?.first_name + target?.last_name;
-      return name || '--';
-    }
-    return '--';
-  };
 
   const getDataSets = async () => {
     setLoading(true);
