@@ -180,14 +180,7 @@ const Detail = () => {
               <Topsection />
             </div>
             <div className={`p-4 flex-1 rounded-lg bg-white shadow overflow-hidden flex flex-col`}>
-              <div className="flex justify-between items-center mb-4 gap-2">
-                <button
-                  className="flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
-                  onClick={() => router.back()}
-                >
-                  <ArrowLeftOutlined className="mr-2" />
-                  返回
-                </button>
+              <div className="flex justify-end items-center mb-4 gap-2">
                 <div className='flex'>
                   <Search
                     className="w-[240px] mr-1.5"
@@ -212,6 +205,12 @@ const Detail = () => {
                   loading={loading}
                   onChange={handleChange}
                 />
+                <button
+                  className="absolute bottom-0 left-0 flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
+                  onClick={() => router.back()}
+                >
+                  <ArrowLeftOutlined className="mr-2 text-lg" />
+                </button>
               </div>
             </div>
           </section>

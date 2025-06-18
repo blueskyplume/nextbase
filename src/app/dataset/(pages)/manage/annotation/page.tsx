@@ -8,7 +8,7 @@ import Aside from "./components/aside";
 import Icon from '@/components/icon';
 import LineChart from "@/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
-import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination, LabelData } from '@/types';
+import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination } from '@/types';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
 import { exportToCSV } from "@/utils/common";
@@ -138,12 +138,12 @@ const AnnotationPage = () => {
   }, [tableData]);
 
   useEffect(() => {
-    if (currentFileData.length && flag) {
-        setTimeline({
-          startIndex: 0,
-          endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
-        });
-        setFlag(false);
+    if (currentFileData.length) {
+      setTimeline({
+        startIndex: 0,
+        endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
+      });
+      // setFlag(false);
     }
   }, [currentFileData]);
 
@@ -333,6 +333,7 @@ const AnnotationPage = () => {
           loading={loading}
           menuItems={menuItems}
           isChange={isChange}
+          onChange={(value: boolean) => setIsChange(value)}
         >
           <AnnotationIntro />
         </Aside>

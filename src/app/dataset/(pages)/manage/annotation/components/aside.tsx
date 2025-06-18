@@ -3,15 +3,18 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import sideMenuStyle from './index.module.scss';
-import { Spin } from 'antd'
+import { Spin, Modal } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import { useRouter } from 'next/navigation';
 import { AnomalyTrainData } from '@/types';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import { useTranslation } from '@/utils/i18n';
+const { confirm } = Modal;
 
-const Aside = ({ children, menuItems, loading, isChange }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean }) => {
+const Aside = ({ children, menuItems, loading, isChange, onChange }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean, onChange: (value: boolean) => void }) => {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const folder_id = searchParams.get('folder_id') || '';
   const folder_name = searchParams.get('folder_name') || '';
@@ -29,13 +32,40 @@ const Aside = ({ children, menuItems, loading, isChange }: { children: any, menu
   const goBack = (e: any) => {
     e.preventDefault();
     if (isChange) {
-      const shouldSave = window.confirm('请确认数据已保存，是否继续？');
-      if (shouldSave) {
-        router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
-      }
+      confirm({
+        title: `离开此页面`,
+        content: `请确认数据是否已保存?`,
+        okText: t('common.confirm'),
+        cancelText: t('common.cancel'),
+        centered: true,
+        onOk() {
+          return new Promise(async (resolve) => {
+            resolve(true);
+            onChange(false);
+            router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
+          })
+        }
+      })
     } else {
       router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
     }
+  };
+
+  const showConfirm = (id: number) => {
+    confirm({
+      title: `离开此页面`,
+      content: `请确认数据是否已保存?`,
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
+      onOk() {
+        return new Promise(async (resolve) => {
+          resolve(true);
+          onChange(false);
+          router.push(buildUrlWithParams(id));
+        })
+      }
+    })
   };
 
   return (
@@ -65,10 +95,7 @@ const Aside = ({ children, menuItems, loading, isChange }: { children: any, menu
                     onClick={async (e) => {
                       e.preventDefault();
                       if (isChange) {
-                        const shouldSave = window.confirm('请确认数据已保存，是否继续？');
-                        if (shouldSave) {
-                          router.push(buildUrlWithParams(item.id));
-                        }
+                        showConfirm(item.id)
                       } else {
                         router.push(buildUrlWithParams(item.id));
                       }
@@ -88,7 +115,7 @@ const Aside = ({ children, menuItems, loading, isChange }: { children: any, menu
             className="absolute bottom-4 left-4 flex items-center content-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
             onClick={goBack}
           >
-            <ArrowLeftOutlined className="mr-2" />
+            <ArrowLeftOutlined className="mr-2 text-lg" />
           </button>
         </nav>
       </aside>
