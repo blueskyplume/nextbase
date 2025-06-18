@@ -1,4 +1,4 @@
-import { MetricItem, ListItem, ColumnItem } from "@/types";
+import { MetricItem, ListItem, ColumnItem, UserProfile } from "@/types";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import dayjs from "dayjs";
 
@@ -124,12 +124,13 @@ export const exportToCSV = (data: any[], columns: ColumnItem[], filename = 'expo
   // 4. 创建 Blob 并下载
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   return blob;
-  // const url = URL.createObjectURL(blob);
-  // const a = document.createElement('a');
-  // a.href = url;
-  // a.download = filename;
-  // document.body.appendChild(a);
-  // a.click();
-  // document.body.removeChild(a);
-  // URL.revokeObjectURL(url);
+};
+
+export const getName = (targetID: string, data: UserProfile[] | null) => {
+  if (data) {
+    const target: UserProfile = data.find(u => u.id == targetID) as UserProfile;
+    const name = target?.first_name + target?.last_name;
+    return name || '--';
+  }
+  return '--';
 };

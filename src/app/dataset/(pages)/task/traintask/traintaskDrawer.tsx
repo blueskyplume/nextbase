@@ -8,6 +8,12 @@ import { supabase } from "@/utils/supabaseClient";
 const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCancel: () => void, trainData: any[] }) => {
   const { t } = useTranslation();
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    total: 1,
+    pageSize: 10,
+  });
 
   // 使用 useCallback 缓存 renderColumns 函数
   const renderColumns = useCallback((params: Object) => {
@@ -104,11 +110,15 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
   ], [t]);
 
   const getHistoryData = useCallback(async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (pagination.current - 1) * pagination.pageSize;
+      const to = from + pagination.pageSize - 1;
+      const { data, error, count } = await supabase
         .from('anomaly_detection_train_history')
-        .select(`*, anomaly_detection_train_jobs (name)`)
-        .order('created_at', { ascending: false });
+        .select(`*, anomaly_detection_train_jobs (name)`, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) {
         console.error('Failed to fetch history:', error);
@@ -124,9 +134,15 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
           loading: false, // 修正字段名
         }));
         setTableData(processedData);
+        setPagination(prev => ({
+          ...prev,
+          total: count || 0
+        }))
       }
     } catch (error) {
       console.error('Error fetching history data:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -134,7 +150,11 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
     if (open) {
       getHistoryData();
     }
-  }, [open, getHistoryData]);
+  }, [open, pagination.current, pagination.pageSize]);
+
+  const onChange = (value: any) => {
+    setPagination(value);
+  };
 
   return (
     <Drawer
@@ -151,14 +171,12 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
       <CustomTable
         rowKey="key"
         scroll={{ y: 'calc(100vh - 280px)' }}
+        loading={loading}
         columns={columns}
         dataSource={tableData}
         expandable={expandableConfig}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
+        pagination={pagination}
+        onChange={onChange}
       />
     </Drawer>
   );

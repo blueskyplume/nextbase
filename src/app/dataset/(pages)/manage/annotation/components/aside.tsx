@@ -7,9 +7,10 @@ import { Spin } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import { useRouter } from 'next/navigation';
+import { AnomalyTrainData } from '@/types';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
-const Aside = ({ children, menuItems, loading }: { children: any, menuItems: any, loading: boolean }) => {
+const Aside = ({ children, menuItems, loading, isChange }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const folder_id = searchParams.get('folder_id') || '';
@@ -27,8 +28,12 @@ const Aside = ({ children, menuItems, loading }: { children: any, menuItems: any
 
   const goBack = (e: any) => {
     e.preventDefault();
-    const shouldSave = window.confirm('请确认数据已保存，是否继续？');
-    if (shouldSave) {
+    if (isChange) {
+      const shouldSave = window.confirm('请确认数据已保存，是否继续？');
+      if (shouldSave) {
+        router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
+      }
+    } else {
       router.replace(`/dataset/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}`);
     }
   };
@@ -59,8 +64,12 @@ const Aside = ({ children, menuItems, loading }: { children: any, menuItems: any
                     className="group flex items-center overflow-hidden h-9 rounded-md py-2 text-[15px] px-3"
                     onClick={async (e) => {
                       e.preventDefault();
-                      const shouldSave = window.confirm('请确认数据已保存，是否继续？');
-                      if (shouldSave) {
+                      if (isChange) {
+                        const shouldSave = window.confirm('请确认数据已保存，是否继续？');
+                        if (shouldSave) {
+                          router.push(buildUrlWithParams(item.id));
+                        }
+                      } else {
                         router.push(buildUrlWithParams(item.id));
                       }
                     }}

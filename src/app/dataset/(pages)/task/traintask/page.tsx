@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button, Input, Popconfirm, message } from 'antd';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -9,6 +9,7 @@ import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { ModalRef, UserProfile, ColumnItem } from '@/types';
+import { getName } from '@/utils/common';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
 import { useTranslation } from '@/utils/i18n';
@@ -38,7 +39,7 @@ const TrainTask = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
-    total: 1,
+    total: 0,
     pageSize: 10,
   });
 
@@ -128,36 +129,14 @@ const TrainTask = () => {
     </div>
   );
 
-  const pagedData = useMemo(() => {
-    if (!tableData.length) return [];
-    return tableData.slice(
-      (pagination.current - 1) * pagination.pageSize,
-      pagination.current * pagination.pageSize
-    );
-  }, [tableData, pagination.current, pagination.pageSize]);
-
-
   useEffect(() => {
     getTasks();
+  }, [pagination.current, pagination.pageSize]);
+
+  useEffect(() => {
     getTrainData();
     getCurrentUser();
   }, []);
-
-  useEffect(() => {
-    setPagination(prev => ({
-      ...prev,
-      total: tableData.length,
-    }));
-  }, [tableData]);
-
-  const getName = (targetID: string, data: UserProfile[] | null) => {
-    if (data) {
-      const target: UserProfile = data.find(u => u.id == targetID) as UserProfile;
-      const name = target?.first_name + target?.last_name;
-      return name || '--';
-    }
-    return '--';
-  };
 
   const getTrainStatus = (targetID: string | number, data: any[] | null) => {
     if (data) {
@@ -171,7 +150,7 @@ const TrainTask = () => {
   const getTasks = async (search: string = '') => {
     setLoading(true);
     try {
-      const data = await fetchTaskList(search);
+      const { data, count } = await fetchTaskList(search);
       const history = await fetchHistory();
       const { data: users } = await supabase
         .from('user_profiles')
@@ -189,7 +168,7 @@ const TrainTask = () => {
       setTableData(_data as TrainJob[]);
       setPagination(prev => ({
         ...prev,
-        total: data?.length || 0,
+        total: count,
       }));
     } catch (e) {
       console.log(e);
@@ -199,11 +178,13 @@ const TrainTask = () => {
   };
 
   const fetchTaskList = async (search: string = '') => {
-    setLoading(true);
-    const { data } = await supabase.from('anomaly_detection_train_jobs')
-      .select()
+    const { data, count } = await supabase.from('anomaly_detection_train_jobs')
+      .select(`*`, { count: 'exact' })
       .ilike('name', `%${search}%`);
-    return data;
+    return {
+      data,
+      count: count || 0
+    }
   };
 
   const fetchHistory = async () => {
@@ -214,12 +195,12 @@ const TrainTask = () => {
   const getTrainData = async () => {
     try {
       const { data, error } = await supabase.from("anomaly_detection_train_data").select();
-      if(!error) return setTrainData(data);
+      if (!error) return setTrainData(data);
       message.error(error.message);
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
   const getCurrentUser = async () => {
     const { data, error } = await supabase.auth.getUser();
@@ -315,7 +296,7 @@ const TrainTask = () => {
                 rowKey="id"
                 className="mt-3"
                 scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
-                dataSource={pagedData}
+                dataSource={tableData}
                 columns={columns}
                 pagination={pagination}
                 loading={loading}
