@@ -67,6 +67,10 @@
     "selectDatasets": "Please select a data set",
     "selectTraindata": "Please select the training data parameters",
     "deleteTraintask": "Sure you want to delete this training task?",
-    "IsolationForst": "Isolation Forest"
+    "IsolationForst": "Isolation Forest",
+    "notStarted": "Not Started",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "failed": "Training failure"
   }
 }

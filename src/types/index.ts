@@ -249,7 +249,7 @@ export interface AlgorithmParam {
 }
 
 export interface TrainData {
-  id: string | number;
+  id: number;
   name: string;
   dataset_id: string | number;
 }
@@ -261,6 +261,7 @@ export interface TrainTaskHistory {
   train_data_id: number;
   user_id: string;
   parameters: string;
+  status: string;
   created_at?: string;
   started_at?: string;
   updated_at?: string;

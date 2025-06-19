@@ -83,7 +83,7 @@ const TrainDataModal = ({ ref, supabase, user, onSuccess, trainData }: TrainData
             job_id: formData?.id,
             train_data_id: data.train_data_id,
             parameters: JSON.stringify(data.params),
-            status: 'not_started',
+            status: 'in_progress',
             user_id: user.id
           }
         ]);

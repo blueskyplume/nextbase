@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, Input, Popconfirm, message } from 'antd';
+import { Button, Input, Popconfirm, message, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -9,7 +9,8 @@ import sideMenuStyle from './index.module.scss';
 import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import { ModalRef, ColumnItem, TableData, TrainJob, TrainTaskHistory } from '@/types';
+import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory } from '@/types';
+import { TrainStatus, TrainText } from '@/constants';
 import { getName } from '@/utils/common';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
@@ -17,7 +18,13 @@ import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 const { Search } = Input;
 
+const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
+  return TrainStatus[value] || '';
+};
 
+const getStatusText = (value: string, TrainText: Record<string, string>) => {
+  return TrainText[value] || '';
+};
 
 const TrainTask = () => {
   const { t } = useTranslation();
@@ -29,6 +36,7 @@ const TrainTask = () => {
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [trainData, setTrainData] = useState<any[]>([]);
   const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
+  const [selectId, setSelectId] = useState<number | null>(null);
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
@@ -68,6 +76,11 @@ const TrainTask = () => {
       title: t('common.status'),
       key: 'status',
       dataIndex: 'status',
+      render: (_, record: TrainJob) => {
+        return record.status ? (<Tag color={getStatusColor(record.status, TrainStatus)} className=''>
+          {t(`traintask.${getStatusText(record.status, TrainText)}`)}
+        </Tag>) : (<p>--</p>)
+      }
     },
     {
       title: t('common.action'),
@@ -95,7 +108,7 @@ const TrainTask = () => {
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => setOpen(true)}
+            onClick={() => openHistortDrawer(record)}
           >
             {t('traintask.history')}
           </Button>
@@ -239,6 +252,11 @@ const TrainTask = () => {
     }
   };
 
+  const openHistortDrawer = (record: TrainJob) => {
+    setSelectId(record.id as number);
+    setOpen(true);
+  }
+
   const handleChange = (value: any) => {
     setPagination(value);
   };
@@ -313,7 +331,7 @@ const TrainTask = () => {
         user={user as User}
         onSuccess={() => getTasks()}
       />
-      <TrainTaskDrawer open={open} onCancel={onCancel} historyData={historyData} trainData={trainData} />
+      <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} historyData={historyData} trainData={trainData} />
       <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} trainData={trainData} onSuccess={() => getTasks()} />
     </div>
   );

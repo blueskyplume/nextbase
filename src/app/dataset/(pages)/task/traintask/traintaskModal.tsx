@@ -91,6 +91,7 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
         return;
       }
       setIsModalOpen(false);
+      message.success(`datasets.${type}Success`)
       onSuccess();
     } catch (e) {
       console.log(e);

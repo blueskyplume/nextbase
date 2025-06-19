@@ -1,10 +1,26 @@
-import { Button, Drawer, TablePaginationConfig } from "antd";
+import { Button, Drawer, TablePaginationConfig, Tag } from "antd";
 import { ColumnItem, TrainTaskHistory } from "@/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
 import { useState, useCallback, useMemo } from "react";
+import { TrainStatus, TrainText } from '@/constants';
 
-const TrainTaskDrawer = ({ open, onCancel, trainData, historyData }: { open: boolean, onCancel: () => void, trainData: any[], historyData: TrainTaskHistory[] }) => {
+const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
+  return TrainStatus[value] || '';
+};
+
+const getStatusText = (value: string, TrainText: Record<string, string>) => {
+  return TrainText[value] || '';
+};
+
+const TrainTaskDrawer = ({ open, onCancel, trainData, historyData, selectId }:
+  {
+    open: boolean,
+    onCancel: () => void,
+    trainData: any[],
+    historyData: TrainTaskHistory[],
+    selectId: number | null
+  }) => {
   const { t } = useTranslation();
   // const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
@@ -69,7 +85,12 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData }: { open: boo
       title: t('traintask.executionStatus'),
       dataIndex: 'status',
       key: 'status',
-      width: 100
+      width: 100,
+      render: (_, record: TrainTaskHistory) => {
+        return record.status ? (<Tag color={getStatusColor(record.status, TrainStatus)} className=''>
+          {t(`traintask.${getStatusText(record.status, TrainText)}`)}
+        </Tag>) : (<p>--</p>)
+      }
     },
     {
       title: t('traintask.executionScore'),
@@ -109,9 +130,9 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData }: { open: boo
   ], [t]);
 
   const processedData = useMemo(() => {
-    // setLoading(true);
+    if (selectId === null) return [];
     if (historyData) {
-      const processedData = historyData.map((item, index) => ({
+      const processedData = historyData.filter((item) => item.job_id === selectId).map((item, index) => ({
         ...item,
         key: `history-${item.id || index}`, // 确保每行有唯一 key
         type: 'anomaly',
@@ -125,13 +146,7 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData }: { open: boo
         pagination.current! * pagination.pageSize!
       );
     }
-  }, [historyData, pagination.current, pagination.pageSize]);
-
-  //  useEffect(() => {
-  //     if (open) {
-  //       getHistoryData();
-  //     }
-  //   }, [open, pagination.current, pagination.pageSize]); 
+  }, [historyData, pagination.current, pagination.pageSize, selectId]);
 
   const onChange = (value: TablePaginationConfig) => {
     setPagination((prev) => ({

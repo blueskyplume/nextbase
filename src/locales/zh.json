@@ -67,6 +67,10 @@
     "selectDatasets": "请选择数据训练集",
     "selectTraindata": "请选择训练数据参数",
     "deleteTraintask": "确定要删除该训练任务吗？",
-    "IsolationForst": "孤立森林"
+    "IsolationForst": "孤立森林",
+    "notStarted": "未开始",
+    "inProgress": "进行中",
+    "completed": "已完成",
+    "failed": "训练失败"
   }
 }
