@@ -1,34 +1,32 @@
 "use client";
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
 import { Segmented, Modal, message } from 'antd';
 import EntityList from '@/components/entity-list';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import DatasetModal from './dataSetsModal';
-import { ModalRef, UserProfile } from '@/types';
+import { ModalRef, DataSet } from '@/types';
 import { getName } from '@/utils/common';
 import '@ant-design/v5-patch-for-react-19';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import { UserInfoContext } from '@/context/userInfo';
-
-const { confirm } = Modal;
 import sideMenuStyle from './index.module.scss';
+import { UserInfoContext } from '@/context/userInfo';
+const { confirm } = Modal;
 
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const data = useContext(UserInfoContext);
+  const userinfo = useContext(UserInfoContext);
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('anomaly');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValue, setFilterValue] = useState<string[]>([]);
-  const [datasets, setDatasets] = useState<any>([]);
+  const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modalRef = useRef<ModalRef>(null);
 
   useEffect(() => {
-    console.log(data);
     if (!loading) {
       getDataSets();
     }
@@ -40,12 +38,14 @@ const DatasetManagePage = () => {
     { key: 'log', value: 'log', label: t('datasets.log') },
   ];
 
-  const menuActions = (data: any) => [
+  const menuActions = (data: DataSet) => [
     {
       key: 'edit',
       label: (
         <div>
-          <span className="block w-full" onClick={() => handleOpenModal('edit', 'editform', data)}>{t('common.edit')}</span>
+          <span className="block w-full" onClick={() => {
+            handleOpenModal('edit', 'editform', data)
+          }}>{t('common.edit')}</span>
         </div>
       ),
     },
@@ -59,38 +59,36 @@ const DatasetManagePage = () => {
     },
   ];
 
-  const getDataSets = async () => {
+  const getDataSets = useCallback(async (search: string = '') => {
     setLoading(true);
     if (activeTab === 'anomaly') {
       const { data, error } = await supabase
         .from('anomaly_detection_datasets')
-        .select(`*`);
+        .select(`*`)
+        .ilike('name', `%${search}%`);
       const { data: currentUser } = await supabase.auth.getUser();
       const { data: users } = await supabase
         .from('user_profiles')
         .select('id,first_name,last_name');
+      const _data: DataSet[] = data?.map((item) => {
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || '--',
+          icon: 'chakanshuji',
+          creator: getName(item?.user_id, users),
+          user_id: currentUser.user?.id || '',
+          tenant_id: item.tenant_id
+        }
+      }) || [];
       setUser(currentUser.user);
-      if (data?.length) {
-        const _data = data.map((item) => {
-          return {
-            id: item.id,
-            name: item.name,
-            description: item.description || '--',
-            icon: 'chakanshuji',
-            creator: getName(item?.user_id, users),
-            user_id: currentUser.user?.id,
-            tenant_id: item.tenant_id
-          }
-        })
-        setDatasets(_data);
-      } else {
-        message.error(`${error?.code} ${error?.message}`);
-      }
+      setDatasets(_data);
+      if (error) message.error(`${error?.code} ${error?.message}`);
     } else {
       setDatasets([]);
     }
     setLoading(false);
-  };
+  }, [activeTab]);
 
   const infoText = (item: any) => {
     return `Created by: ${item.creator}`;
@@ -98,7 +96,7 @@ const DatasetManagePage = () => {
 
   const navigateToNode = (item: any) => {
     router.push(
-      `/dataset/manage/detail?folder_id=${item?.id}&folder_name=${item.name}`
+      `/dataset/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}`
     );
   };
 

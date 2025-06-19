@@ -8,7 +8,7 @@ import Aside from "./components/aside";
 import Icon from '@/components/icon';
 import LineChart from "@/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
-import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination, LabelData } from '@/types';
+import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination } from '@/types';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
 import { exportToCSV } from "@/utils/common";
@@ -16,7 +16,8 @@ import '@ant-design/v5-patch-for-react-19';
 import sideMenuStyle from './components/index.module.scss';
 
 const AnnotationIntro = memo(() => {
-  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const folder_name = searchParams.get('folder_name');
   return (
     <div className="flex h-[58px] flex-col items-center justify-center">
       <div className='flex justify-center mb-2'>
@@ -25,7 +26,7 @@ const AnnotationIntro = memo(() => {
           className="mr-2"
           style={{ height: '22px', width: '22px', color: 'blue' }}
         ></Icon>
-        <h1 className="text-center text-lg leading-[24px]">{t('traintask.datasets')}</h1>
+        <h1 className="text-center text-lg leading-[24px]">{folder_name}</h1>
       </div>
     </div>
   );
@@ -139,11 +140,11 @@ const AnnotationPage = () => {
 
   useEffect(() => {
     if (currentFileData.length && flag) {
-        setTimeline({
-          startIndex: 0,
-          endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
-        });
-        setFlag(false);
+      setTimeline({
+        startIndex: 0,
+        endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
+      });
+      setFlag(false);
     }
   }, [currentFileData]);
 
@@ -333,6 +334,8 @@ const AnnotationPage = () => {
           loading={loading}
           menuItems={menuItems}
           isChange={isChange}
+          onChange={(value: boolean) => setIsChange(value)}
+          changeFlag={(value: boolean) => setFlag(value)}
         >
           <AnnotationIntro />
         </Aside>
@@ -358,7 +361,7 @@ const AnnotationPage = () => {
                     onAnnotationClick={onAnnotationClick}
                   />
                 </div>
-                <div className="w-[32%]" style={{ height: `calc(100vh - 260px)` }}>
+                <div className="w-[32%] overflow-clip" style={{ height: `calc(100vh - 260px)` }}>
                   <CustomTable
                     size="small"
                     rowKey="timestamp"

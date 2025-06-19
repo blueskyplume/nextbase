@@ -1,40 +1,19 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
 import { Form, Input, Button, Select, FormInstance, message } from 'antd';
-import { useState, useImperativeHandle, useEffect, useRef, useMemo } from 'react';
+import { useState, useImperativeHandle, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { SupabaseClient, User } from '@supabase/supabase-js';
 import '@ant-design/v5-patch-for-react-19';
-import { Option } from '@/types';
+import { Option, TrainJob, TrainTaskModalProps } from '@/types';
 
-interface TrainTaskModalProps {
-  supabase: SupabaseClient;
-  user: User;
-  // options: any,
-  onSuccess: () => void;
-  [key: string]: any
-}
-
-interface DatasetProp {
-  id: string | number;
-  tenant_id: string | number;
-  dataset_id: string | number;
-  storage_path: string | number;
-  user_id: string | number;
-  name: string;
-  [key: string]: any
-}
-
-const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskModalProps) => {
+const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('add');
   const [title, setTitle] = useState<string>('addtask');
   const [datasetItems, setDatasetItems] = useState<Option[]>([]);
-  const [formData, setFormData] = useState<any>({
-    name: '',
-    description: '',
-  });
+  const [selectLoading, setSelectLoading] = useState<boolean>(false);
+  const [formData, setFormData] = useState<TrainJob | null>(null);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const formRef = useRef<FormInstance>(null);
 
@@ -42,20 +21,19 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
     showModal: ({ type, title, form }: {
       type: string;
       title: string;
-      form: any;
+      form: TrainJob;
     }) => {
       setIsModalOpen(true);
       setType(type);
       setTitle(title);
       setFormData(form);
-      console.log(form)
     }
   }));
 
   useEffect(() => {
     if (isModalOpen && formRef.current) {
       formRef.current?.resetFields();
-      getDataSets();
+      getDataSets(formData?.dataset_id as number)
 
       if (type === 'add') {
         formRef.current?.setFieldsValue({
@@ -65,12 +43,14 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
         return;
       }
       formRef.current.setFieldsValue({
-        ...formData
-      })
+        name: formData?.name,
+        type: formData?.type
+      });
     }
   }, [formData, isModalOpen]);
 
-  const getDataSets = async () => {
+  const getDataSets = useCallback(async (dataset_id: number) => {
+    setSelectLoading(true);
     const { data } = await supabase.from('anomaly_detection_datasets').select();
     const items = data?.map((item) => {
       return {
@@ -79,14 +59,18 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
       }
     }) || [];
     setDatasetItems(items as Option[]);
-  };
+    formRef.current?.setFieldValue('dataset_id', dataset_id);
+    setSelectLoading(false);
+  }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
+    if (confirmLoading) return;
     setConfirmLoading(true);
     try {
       const value = await formRef.current?.validateFields();
+      let result;
       if (type === 'add') {
-        const { error } = await supabase.from('anomaly_detection_train_jobs').insert([
+        result = await supabase.from('anomaly_detection_train_jobs').insert([
           {
             tenant_id: user.app_metadata?.tenant_id,
             name: value.name,
@@ -94,23 +78,27 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
             user_id: user.id
           }
         ]);
-        if (!error) message.success(t('common.createdSuccess'))
       } else {
-        const { error } = await supabase.from('anomaly_detection_train_jobs')
+        result = await supabase.from('anomaly_detection_train_jobs')
           .update({
             name: value.name,
             dataset_id: value.dataset_id
           })
-          .eq('id', formData.id);
-        if (!error) return message.success(t('common.updateSuccess'))
-        message.error(error.message);
+          .eq('id', formData?.id);
       }
+      if (result.error) {
+        message.error(result.error.message);
+        return;
+      }
+      setIsModalOpen(false);
+      message.success(`datasets.${type}Success`)
+      onSuccess();
     } catch (e) {
-      console.log(e)
+      console.log(e);
     } finally {
       setConfirmLoading(false);
     }
-  };
+  }, [type, formData, onSuccess]);
 
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -156,7 +144,7 @@ const TrainTaskModal = ({ ref, supabase, user, options, onSuccess }: TrainTaskMo
             label={t('traintask.datasets')}
             rules={[{ required: true, message: t('traintask.selectDatasets') }]}
           >
-            <Select placeholder={t('traintask.selectDatasets')} options={datasetItems} />
+            <Select placeholder={t('traintask.selectDatasets')} loading={selectLoading} options={datasetItems} />
           </Form.Item>
         </Form>
       </OperateModal>

@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
-import { ColumnItem, ModalRef, Pagination } from '@/types';
+import { ColumnItem, ModalRef, Pagination, TableData } from '@/types';
 import { Button, Input, Popconfirm, message } from 'antd';
 import { supabase } from '@/utils/supabaseClient';
 import '@ant-design/v5-patch-for-react-19';
@@ -15,12 +15,37 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 const { Search } = Input;
 
-interface TableData {
-  id: number,
-  name: string,
-  anomaly?: number,
-  [key: string]: any
-}
+const Topsection = memo(({
+  folder_name,
+  description,
+  t
+}: {
+  folder_name: string;
+  description: string;
+  t: (id: string) => string
+}) => {
+  return (
+    <div className="mb-4 flex w-full gap-4">
+      <div className="w-[216px] rounded-lg flex h-[90px] flex-col items-center justify-center bg-white shadow">
+        <div className="flex justify-center items-center mb-2">
+          <Icon
+            type="chakanshuji"
+            className="mr-2"
+            style={{ height: '22px', width: '22px', color: '#1976d2' }}
+          />
+          <h1 className="text-lg font-bold leading-[24px] text-gray-800">{folder_name}</h1>
+        </div>
+        <p className="text-xs text-gray-500">{description}</p>
+      </div>
+      <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
+        <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
+        <p className="text-xs text-gray-500">
+          {t('datasets.detail')}
+        </p>
+      </div>
+    </div>
+  );
+});
 
 const Detail = () => {
   const { t } = useTranslation();
@@ -36,7 +61,17 @@ const Detail = () => {
     pageSize: 10,
   });
 
-  const columns: ColumnItem[] = [
+  const {
+    folder_id,
+    folder_name,
+    description
+  } = useMemo(() => ({
+    folder_id: searchParams.get('folder_id'),
+    folder_name: searchParams.get('folder_name') || '',
+    description: searchParams.get('description') || ''
+  }), [searchParams]);
+
+  const columns: ColumnItem[] = useMemo(() => [
     {
       title: t('common.name'),
       key: 'name',
@@ -87,39 +122,15 @@ const Detail = () => {
         </>
       ),
     },
-  ];
+  ], [t]);
 
-  const Topsection = () => {
-    return (
-      <>
-        <div className="mb-4 flex w-full gap-4">
-          <div className="w-[216px] rounded-lg flex h-[90px] flex-col items-center justify-center bg-white shadow">
-            <div className="flex justify-center items-center mb-2">
-              <Icon
-                type="chakanshuji"
-                className="mr-2"
-                style={{ height: '22px', width: '22px', color: '#1976d2' }}
-              />
-              <h1 className="text-lg font-bold leading-[24px] text-gray-800">Weops</h1>
-            </div>
-            <p className="text-xs text-gray-500">训练文件列表</p>
-          </div>
-          <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
-            <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
-            <p className="text-xs text-gray-500">
-              {t('datasets.detail')}
-            </p>
-          </div>
-        </div>
-      </>
-    );
-  };
+
 
   useEffect(() => {
     getDataset();
   }, [pagination.current, pagination.pageSize]);
 
-  const getDataset = async (search: string = '') => {
+  const getDataset = useCallback(async (search: string = '') => {
     setLoading(true);
     const from = (pagination.current - 1) * pagination.pageSize;
     const to = from + pagination.pageSize - 1;
@@ -136,7 +147,7 @@ const Detail = () => {
       }
     });
     setLoading(false);
-  };
+  }, [t, searchParams]);
 
   const onSearch = (search: string) => {
     getDataset(search);
@@ -162,9 +173,7 @@ const Detail = () => {
   };
 
   const toAnnotation = (data: any) => {
-    const folder_id = searchParams.get('folder_id');
-    const folder_name = searchParams.get('folder_name');
-    router.push(`/dataset/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}`);
+    router.push(`/dataset/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
   };
 
   const handleChange = (value: any) => {
@@ -177,17 +186,10 @@ const Detail = () => {
         <div className="w-full flex grow flex-1 h-full">
           <section className="flex-1 flex flex-col overflow-hidden">
             <div className={`flex w-full rounded-md`}>
-              <Topsection />
+              <Topsection folder_name={folder_name} description={description} t={t} />
             </div>
             <div className={`p-4 flex-1 rounded-lg bg-white shadow overflow-hidden flex flex-col`}>
-              <div className="flex justify-between items-center mb-4 gap-2">
-                <button
-                  className="flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
-                  onClick={() => router.back()}
-                >
-                  <ArrowLeftOutlined className="mr-2" />
-                  返回
-                </button>
+              <div className="flex justify-end items-center mb-4 gap-2">
                 <div className='flex'>
                   <Search
                     className="w-[240px] mr-1.5"
@@ -212,6 +214,12 @@ const Detail = () => {
                   loading={loading}
                   onChange={handleChange}
                 />
+                <button
+                  className="absolute bottom-0 left-0 flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
+                  onClick={() => router.push('/dataset/manage')}
+                >
+                  <ArrowLeftOutlined className="mr-2 text-lg" />
+                </button>
               </div>
             </div>
           </section>

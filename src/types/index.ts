@@ -1,9 +1,10 @@
 import type { MenuProps } from 'antd';
 import { JSX } from 'react';
+import { SupabaseClient, User } from '@supabase/supabase-js';
 
 export interface Option {
   label: string;
-  value: string;
+  value: string | number;
 }
 
 export interface EntityListProps<T> {
@@ -195,4 +196,77 @@ export interface LabelData {
   timestamp: string,
   value: number,
   label?: number
+}
+
+export interface TableData {
+  id: number,
+  name: string,
+  anomaly?: number,
+  [key: string]: any
+}
+
+export interface DataSet {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  creator: string;
+  user_id: string;
+  tenant_id: string;
+}
+
+export interface TrainJob {
+  id: string | number,
+  user_id: string,
+  dataset_id: number,
+  name: string,
+  type: string,
+  status: string,
+  created_at: string,
+}
+
+export interface TrainTaskModalProps {
+  supabase: SupabaseClient;
+  user: User;
+  options?: any;
+  onSuccess: () => void;
+  [key: string]: any
+}
+
+export interface TrainDataModalProps {
+  supabase: SupabaseClient;
+  user: User;
+  options?: any;
+  onSuccess: () => void;
+  trainData: TrainData[];
+  [key: string]: any
+}
+
+export interface AlgorithmParam {
+  name: string;
+  type: 'value' | 'enum';
+  default: string | number;
+}
+
+export interface TrainData {
+  id: number;
+  name: string;
+  dataset_id: string | number;
+}
+
+export interface TrainTaskHistory {
+  id: number;
+  job_id: number;
+  tenant_id: number;
+  train_data_id: number;
+  user_id: string;
+  parameters: string;
+  status: string;
+  created_at?: string;
+  started_at?: string;
+  updated_at?: string;
+  completed_at?: string;
+  anomaly_detection_train_jobs: {
+    name: string;
+  }
 }
