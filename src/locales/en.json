@@ -41,6 +41,8 @@
     "log": "Log",
     "uploadSuccess": "Upload Successful",
     "saveSuccess": "Save Successful",
+    "addSuccess": "Add Successful",
+    "editSuccess": "Update Successful",
     "saveError": "Save Error",
     "anomalyTitle": "Anomaly",
     "annotate": "Annotate",
@@ -64,6 +66,7 @@
     "modelDownload": "Model Download",
     "selectDatasets": "Please select a data set",
     "selectTraindata": "Please select the training data parameters",
-    "deleteTraintask": "Sure you want to delete this training task?"
+    "deleteTraintask": "Sure you want to delete this training task?",
+    "IsolationForst": "Isolation Forest"
   }
 }

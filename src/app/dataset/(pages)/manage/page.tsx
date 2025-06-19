@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
 import { Segmented, Modal, message } from 'antd';
 import EntityList from '@/components/entity-list';
 import { useTranslation } from '@/utils/i18n';
@@ -11,11 +11,13 @@ import '@ant-design/v5-patch-for-react-19';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import sideMenuStyle from './index.module.scss';
+import { UserInfoContext } from '@/context/userInfo';
 const { confirm } = Modal;
 
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const userinfo = useContext(UserInfoContext);
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('anomaly');
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,12 +38,14 @@ const DatasetManagePage = () => {
     { key: 'log', value: 'log', label: t('datasets.log') },
   ];
 
-  const menuActions = (data: any) => [
+  const menuActions = (data: DataSet) => [
     {
       key: 'edit',
       label: (
         <div>
-          <span className="block w-full" onClick={() => handleOpenModal('edit', 'editform', data)}>{t('common.edit')}</span>
+          <span className="block w-full" onClick={() => {
+            handleOpenModal('edit', 'editform', data)
+          }}>{t('common.edit')}</span>
         </div>
       ),
     },
@@ -55,7 +59,7 @@ const DatasetManagePage = () => {
     },
   ];
 
-  const getDataSets = async (search: string = '') => {
+  const getDataSets = useCallback(async (search: string = '') => {
     setLoading(true);
     if (activeTab === 'anomaly') {
       const { data, error } = await supabase
@@ -66,7 +70,6 @@ const DatasetManagePage = () => {
       const { data: users } = await supabase
         .from('user_profiles')
         .select('id,first_name,last_name');
-      setUser(currentUser.user);
       const _data: DataSet[] = data?.map((item) => {
         return {
           id: item.id,
@@ -78,13 +81,14 @@ const DatasetManagePage = () => {
           tenant_id: item.tenant_id
         }
       }) || [];
+      setUser(currentUser.user);
       setDatasets(_data);
       if (error) message.error(`${error?.code} ${error?.message}`);
     } else {
       setDatasets([]);
     }
     setLoading(false);
-  };
+  }, [activeTab]);
 
   const infoText = (item: any) => {
     return `Created by: ${item.creator}`;

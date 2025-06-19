@@ -1,14 +1,12 @@
-import { Button, Drawer } from "antd";
-import { ColumnItem, TableDataItem } from "@/types";
+import { Button, Drawer, TablePaginationConfig } from "antd";
+import { ColumnItem, TrainTaskHistory } from "@/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/utils/supabaseClient";
+import { useState, useCallback, useMemo } from "react";
 
-const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCancel: () => void, trainData: any[] }) => {
+const TrainTaskDrawer = ({ open, onCancel, trainData, historyData }: { open: boolean, onCancel: () => void, trainData: any[], historyData: TrainTaskHistory[] }) => {
   const { t } = useTranslation();
-  const [tableData, setTableData] = useState<TableDataItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  // const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 1,
@@ -56,7 +54,8 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
       title: t('common.type'),
       dataIndex: 'type',
       key: 'type',
-      width: 120
+      width: 120,
+      render: (_, record) => (<p>{record?.type ? t(`datasets.${record.type}`) : '--'}</p>),
     },
     {
       title: t('traintask.executionTime'),
@@ -109,51 +108,37 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
     }
   ], [t]);
 
-  const getHistoryData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const from = (pagination.current - 1) * pagination.pageSize;
-      const to = from + pagination.pageSize - 1;
-      const { data, error, count } = await supabase
-        .from('anomaly_detection_train_history')
-        .select(`*, anomaly_detection_train_jobs (name)`, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+  const processedData = useMemo(() => {
+    // setLoading(true);
+    if (historyData) {
+      const processedData = historyData.map((item, index) => ({
+        ...item,
+        key: `history-${item.id || index}`, // 确保每行有唯一 key
+        type: 'anomaly',
+        parameters: item.parameters ? JSON.parse(item.parameters) : {},
+        name: item.anomaly_detection_train_jobs?.name || '',
+        loading: false, // 修正字段名
+      }));
 
-      if (error) {
-        console.error('Failed to fetch history:', error);
-        return;
-      }
-
-      if (data) {
-        const processedData = data.map((item, index) => ({
-          ...item,
-          key: `history-${item.id || index}`, // 确保每行有唯一 key
-          parameters: item.parameters ? JSON.parse(item.parameters) : {},
-          name: item.anomaly_detection_train_jobs?.name || '',
-          loading: false, // 修正字段名
-        }));
-        setTableData(processedData);
-        setPagination(prev => ({
-          ...prev,
-          total: count || 0
-        }))
-      }
-    } catch (error) {
-      console.error('Error fetching history data:', error);
-    } finally {
-      setLoading(false);
+      return processedData.slice(
+        (pagination.current! - 1) * pagination.pageSize!,
+        pagination.current! * pagination.pageSize!
+      );
     }
-  }, []);
+  }, [historyData, pagination.current, pagination.pageSize]);
 
-  useEffect(() => {
-    if (open) {
-      getHistoryData();
-    }
-  }, [open, pagination.current, pagination.pageSize]);
+  //  useEffect(() => {
+  //     if (open) {
+  //       getHistoryData();
+  //     }
+  //   }, [open, pagination.current, pagination.pageSize]); 
 
-  const onChange = (value: any) => {
-    setPagination(value);
+  const onChange = (value: TablePaginationConfig) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: value?.current || 1,
+      pageSize: value?.pageSize || 10
+    }));
   };
 
   return (
@@ -171,9 +156,9 @@ const TrainTaskDrawer = ({ open, onCancel, trainData }: { open: boolean, onCance
       <CustomTable
         rowKey="key"
         scroll={{ y: 'calc(100vh - 280px)' }}
-        loading={loading}
+        // loading={loading}
         columns={columns}
-        dataSource={tableData}
+        dataSource={processedData}
         expandable={expandableConfig}
         pagination={pagination}
         onChange={onChange}

@@ -41,6 +41,8 @@
     "log": "日志",
     "uploadSuccess": "上传成功",
     "saveSuccess": "保存成功",
+    "addSuccess": "添加成功",
+    "editSuccess": "更新成功",
     "saveError": "保存错误",
     "anomalyTitle": "异常点",
     "annotate": "标注",
@@ -64,6 +66,7 @@
     "modelDownload": "模型下载",
     "selectDatasets": "请选择数据训练集",
     "selectTraindata": "请选择训练数据参数",
-    "deleteTraintask": "确定要删除该训练任务吗？"
+    "deleteTraintask": "确定要删除该训练任务吗？",
+    "IsolationForst": "孤立森林"
   }
 }

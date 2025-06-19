@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Input, Popconfirm, message } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
@@ -8,7 +9,7 @@ import sideMenuStyle from './index.module.scss';
 import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import { ModalRef, UserProfile, ColumnItem } from '@/types';
+import { ModalRef, ColumnItem, TableData, TrainJob, TrainTaskHistory } from '@/types';
 import { getName } from '@/utils/common';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
@@ -16,15 +17,7 @@ import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 const { Search } = Input;
 
-interface TrainJob {
-  id: string | number,
-  user_id: string,
-  dataset_id: number,
-  name: string,
-  type: string,
-  status: string,
-  created_at: string,
-}
+
 
 const TrainTask = () => {
   const { t } = useTranslation();
@@ -35,6 +28,7 @@ const TrainTask = () => {
   const [user, setUser] = useState<User | null>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [trainData, setTrainData] = useState<any[]>([]);
+  const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
@@ -94,16 +88,16 @@ const TrainTask = () => {
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => setOpen(true)}
+            onClick={() => handleEdit(record)}
           >
-            {t('traintask.history')}
+            {t('common.edit')}
           </Button>
           <Button
             type="link"
             className="mr-[10px]"
-            onClick={() => handleEdit(record)}
+            onClick={() => setOpen(true)}
           >
-            {t('common.edit')}
+            {t('traintask.history')}
           </Button>
           <Popconfirm
             title={t('traintask.deleteTraintask')}
@@ -138,20 +132,20 @@ const TrainTask = () => {
     getCurrentUser();
   }, []);
 
-  const getTrainStatus = (targetID: string | number, data: any[] | null) => {
+  const getTrainStatus = useCallback((targetID: string | number, data: any[] | null) => {
     if (data) {
-      const filterArr = data.filter((item) => item.train_data_id === targetID).sort((a, b) => a.updated_at - b.updated_at);
+      const filterArr = data.filter((item) => item.job_id === targetID).sort((a, b) => a.updated_at - b.updated_at);
       const target = filterArr[filterArr.length - 1]?.status;
       return target || '';
     }
     return '';
-  };
+  }, []);
 
   const getTasks = async (search: string = '') => {
     setLoading(true);
     try {
-      const { data, count } = await fetchTaskList(search);
-      const history = await fetchHistory();
+      const { data, count } = await fetchTaskList(search, pagination.current, pagination.pageSize);
+      const history = (await fetchHistory()) || [];
       const { data: users } = await supabase
         .from('user_profiles')
         .select('id,first_name,last_name');
@@ -166,6 +160,7 @@ const TrainTask = () => {
         user_id: item.user_id
       })) || [];
       setTableData(_data as TrainJob[]);
+      setHistoryData(history);
       setPagination(prev => ({
         ...prev,
         total: count,
@@ -177,18 +172,25 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = async (search: string = '') => {
+  const fetchTaskList = useCallback(async (search: string = '', page: number = 1, pageSize: number = 10) => {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
     const { data, count } = await supabase.from('anomaly_detection_train_jobs')
       .select(`*`, { count: 'exact' })
-      .ilike('name', `%${search}%`);
+      .ilike('name', `%${search}%`)
+      .range(from, to)
+      .order('created_at', { ascending: false });
     return {
       data,
       count: count || 0
     }
-  };
+  }, []);
 
   const fetchHistory = async () => {
-    const { data } = await supabase.from("anomaly_detection_train_history").select();
+    const { data } = await supabase
+      .from('anomaly_detection_train_history')
+      .select(`*, anomaly_detection_train_jobs (name)`, { count: 'exact' })
+      .order('created_at', { ascending: false });
     return data;
   };
 
@@ -221,7 +223,7 @@ const TrainTask = () => {
     }
   };
 
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: TrainJob) => {
     if (modalRef.current) {
       modalRef.current.showModal({
         type: 'edit',
@@ -275,8 +277,7 @@ const TrainTask = () => {
                 className="flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
                 onClick={() => router.back()}
               >
-                <ArrowLeftOutlined className="mr-2" />
-                返回
+                <ArrowLeftOutlined className="mr-2 text-lg" />
               </button>
               <div className="flex">
                 <Search
@@ -286,7 +287,7 @@ const TrainTask = () => {
                   onSearch={onSearch}
                   style={{ fontSize: 15 }}
                 />
-                <Button type="primary" className="rounded-md text-xs shadow" onClick={() => handleAdd()}>
+                <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow" onClick={() => handleAdd()}>
                   新建
                 </Button>
               </div>
@@ -310,10 +311,10 @@ const TrainTask = () => {
         ref={modalRef}
         supabase={supabase}
         user={user as User}
-        onSuccess={() => { }}
+        onSuccess={() => getTasks()}
       />
-      <TrainTaskDrawer open={open} onCancel={onCancel} trainData={trainData} />
-      <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} trainData={trainData} onSuccess={() => { }} />
+      <TrainTaskDrawer open={open} onCancel={onCancel} historyData={historyData} trainData={trainData} />
+      <TrainDataModal ref={traindataRef} supabase={supabase} user={user as User} trainData={trainData} onSuccess={() => getTasks()} />
     </div>
   );
 };

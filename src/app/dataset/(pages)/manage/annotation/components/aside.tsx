@@ -12,7 +12,7 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useTranslation } from '@/utils/i18n';
 const { confirm } = Modal;
 
-const Aside = ({ children, menuItems, loading, isChange, onChange }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean, onChange: (value: boolean) => void }) => {
+const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean, onChange: (value: boolean) => void, changeFlag: (value: boolean) => void }) => {
   const pathname = usePathname();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -22,7 +22,7 @@ const Aside = ({ children, menuItems, loading, isChange, onChange }: { children:
   const router = useRouter();
 
   const buildUrlWithParams = (id: number) => {
-    return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}`;
+    return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`;
   };
 
   const isActive = (id: number): boolean => {
@@ -63,6 +63,7 @@ const Aside = ({ children, menuItems, loading, isChange, onChange }: { children:
         return new Promise(async (resolve) => {
           resolve(true);
           onChange(false);
+          changeFlag(true);
           router.push(buildUrlWithParams(id));
         })
       }
@@ -98,6 +99,7 @@ const Aside = ({ children, menuItems, loading, isChange, onChange }: { children:
                       if (isChange) {
                         showConfirm(item.id)
                       } else {
+                        changeFlag(true);
                         router.push(buildUrlWithParams(item.id));
                       }
                     }}

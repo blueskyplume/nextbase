@@ -10,7 +10,7 @@ interface DatasetModalProps {
   user: User;
   options?: any,
   onSuccess: () => void;
-  [key:string]: any
+  [key: string]: any
 }
 
 const DatasetModal = ({ ref, supabase, user, onSuccess }: DatasetModalProps) => {
@@ -50,8 +50,8 @@ const DatasetModal = ({ ref, supabase, user, onSuccess }: DatasetModalProps) => 
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
-      await formRef.current?.validateFields();
-      const _formData = formRef.current?.getFieldsValue();
+      const _formData = await formRef.current?.validateFields();
+      let result;
       if (type === 'add') {
         const { name, description } = _formData;
         const param = {
@@ -60,32 +60,25 @@ const DatasetModal = ({ ref, supabase, user, onSuccess }: DatasetModalProps) => 
           tenant_id: 1,
           user_id: user.id
         }
-        const { error } = await supabase
+        result = await supabase
           .from('anomaly_detection_datasets')
           .insert([param])
           .select();
-        if (error) {
-          message.error(`Error: ${error.code} ${error.message}`);
-        } else {
-          message.success(t('common.addSuccess'))
-          setIsModalOpen(false);
-          onSuccess();
-        }
       } else if (type === 'edit') {
-        const { error } = await supabase
+        result = await supabase
           .from('anomaly_detection_datasets')
           .update({
             name: _formData.name,
             description: _formData.description
           })
           .eq('id', formData.id);
-        if (error) {
-          message.error(`Error: ${error.code} ${error.message}`);
-        } else {
-          setIsModalOpen(false);
-          onSuccess();
-        }
       }
+      if (result?.error) {
+        message.error(result.error.message);
+      }
+      message.success(t(`datasets.${type}Success`));
+      setIsModalOpen(false);
+      onSuccess();
     } finally {
       setConfirmLoading(false);
     }

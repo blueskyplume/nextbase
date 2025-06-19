@@ -1,33 +1,10 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
-import { Form, Input, Button, Select, Typography, FormInstance, message } from 'antd';
+import { Form, Input, Button, Select, FormInstance, message } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { SupabaseClient, User } from '@supabase/supabase-js';
-import { type TRAIN_STATUS } from '@/constants';
-import { Option } from '@/types';
-const { Paragraph } = Typography;
-
-interface TrainTaskModalProps {
-  supabase: SupabaseClient;
-  user: User;
-  options?: any;
-  onSuccess: () => void;
-  trainData: any[];
-  [key: string]: any
-}
-
-interface AlgorithmParam {
-  name: string;
-  type: 'value' | 'enum';
-  default: string | number;
-}
-
-interface TrainData {
-  id: string | number;
-  name: string;
-  dataset_id: string | number;
-}
+// import { type TRAIN_STATUS } from '@/constants';
+import { Option, TrainJob, AlgorithmParam, TrainDataModalProps } from '@/types';
 
 const algorithmsParam: AlgorithmParam[] = [
   { name: 'n_estimators', type: 'value', default: 100 },
@@ -41,26 +18,25 @@ const algorithmsParam: AlgorithmParam[] = [
   { name: 'warm_start', type: 'enum', default: 'False' }
 ];
 
-const TrainDataModal = ({ ref, supabase, user, options, onSuccess, trainData }: TrainTaskModalProps) => {
+const TrainDataModal = ({ ref, supabase, user, onSuccess, trainData }: TrainDataModalProps) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [traindataOption, setTrainDataOption] = useState<Option[]>([]);
-  const [formData, setFormData] = useState<any>();
+  const [formData, setFormData] = useState<TrainJob | null>(null);
   const traindataRef = useRef<FormInstance>(null);
 
   useImperativeHandle(ref, () => ({
-    showModal: ({ form }: { form: any; }) => {
+    showModal: ({ form }: { form: TrainJob; }) => {
       setIsModalOpen(true);
       setFormData(form);
-      const option = trainData
+      const option: Option[] = trainData
         .filter(item => item.dataset_id === form?.dataset_id)
         .map((item) => ({
           label: item?.name,
           value: item?.id
         }));
-      console.log(form, option)
       setTrainDataOption(option);
     }
   }));
@@ -78,7 +54,7 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess, trainData }: 
     }
   }, [isModalOpen]);
 
-  const renderItem = useCallback((param: any[]) => {
+  const renderItem = useCallback((param: AlgorithmParam[]) => {
     return param.map((item) => (
       <Form.Item key={item.name} name={['params', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
         {item.type === 'value' ? <Input /> :
@@ -94,29 +70,33 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess, trainData }: 
     )
   }, [t]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
+    if (confirmLoading) return;
     setConfirmLoading(true);
     try {
       const data = await traindataRef.current?.validateFields();
-      console.log(JSON.stringify(data.params))
-      const { error } = await supabase.from('anomaly_detection_train_history').insert([
-        {
-          tenant_id: user.app_metadata.tenant_id,
-          job_id: formData.id,
-          train_data_id: data.train_data_id,
-          parameters: JSON.stringify(data.params),
-          status: 'not_started',
-          user_id: user.id
-        }
-      ]);
-      if (!error) return message.success(t('common.createdSuccess'));
-      message.error(error.message);
+      const { error } = await supabase
+        .from('anomaly_detection_train_history')
+        .insert([
+          {
+            tenant_id: user.app_metadata.tenant_id,
+            job_id: formData?.id,
+            train_data_id: data.train_data_id,
+            parameters: JSON.stringify(data.params),
+            status: 'not_started',
+            user_id: user.id
+          }
+        ]);
+      if (error) return message.error(error.message);
+      message.success(t('common.createdSuccess'));
+      setIsModalOpen(false);
+      onSuccess();
     } catch (e) {
       console.log(e);
     } finally {
       setConfirmLoading(false);
     }
-  };
+  }, [user, formData]);
 
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -145,14 +125,14 @@ const TrainDataModal = ({ ref, supabase, user, options, onSuccess, trainData }: 
           <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption} />
         </Form.Item>
         <Form.Item
-            name='algorithms'
-            label={t('traintask.algorithms')}
-            rules={[{ required: true, message: t('common.inputMsg') }]}
-          >
-            <Select placeholder={t('common.inputMsg')} onChange={(value) => { console.log(value) }} options={[
-              { value: 'IsolationForst', label: '孤立森林' },
-            ]} />
-          </Form.Item>
+          name='algorithms'
+          label={t('traintask.algorithms')}
+          rules={[{ required: true, message: t('common.inputMsg') }]}
+        >
+          <Select placeholder={t('common.inputMsg')} onChange={(value) => { console.log(value) }} options={[
+            { value: 'IsolationForst', label: t(`traintask.IsolationForst`) },
+          ]} />
+        </Form.Item>
         {renderItem(algorithmsParam)}
       </Form>
     </OperateModal>

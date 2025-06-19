@@ -216,7 +216,7 @@ const Detail = () => {
                 />
                 <button
                   className="absolute bottom-0 left-0 flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
-                  onClick={() => router.back()}
+                  onClick={() => router.push('/dataset/manage')}
                 >
                   <ArrowLeftOutlined className="mr-2 text-lg" />
                 </button>

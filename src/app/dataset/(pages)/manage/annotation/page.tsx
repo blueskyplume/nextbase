@@ -139,12 +139,12 @@ const AnnotationPage = () => {
   }, [tableData]);
 
   useEffect(() => {
-    if (currentFileData.length) {
+    if (currentFileData.length && flag) {
       setTimeline({
         startIndex: 0,
         endIndex: currentFileData.length > 10 ? Math.floor(currentFileData.length / 10) : (currentFileData.length > 1 ? currentFileData.length - 1 : 0)
       });
-      // setFlag(false);
+      setFlag(false);
     }
   }, [currentFileData]);
 
@@ -335,6 +335,7 @@ const AnnotationPage = () => {
           menuItems={menuItems}
           isChange={isChange}
           onChange={(value: boolean) => setIsChange(value)}
+          changeFlag={(value: boolean) => setFlag(value)}
         >
           <AnnotationIntro />
         </Aside>
@@ -360,7 +361,7 @@ const AnnotationPage = () => {
                     onAnnotationClick={onAnnotationClick}
                   />
                 </div>
-                <div className="w-[32%]" style={{ height: `calc(100vh - 260px)` }}>
+                <div className="w-[32%] overflow-clip" style={{ height: `calc(100vh - 260px)` }}>
                   <CustomTable
                     size="small"
                     rowKey="timestamp"
