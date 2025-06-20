@@ -31,23 +31,29 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
   }));
 
   useEffect(() => {
-    if (isModalOpen && formRef.current) {
-      formRef.current?.resetFields();
+    if (isModalOpen) {
       getDataSets(formData?.dataset_id as number)
-
-      if (type === 'add') {
-        formRef.current?.setFieldsValue({
-          type: 'anomaly',
-          algorithms: 'IsolationForst',
-        });
-        return;
-      }
-      formRef.current.setFieldsValue({
-        name: formData?.name,
-        type: formData?.type
-      });
+      initializeForm();
     }
   }, [formData, isModalOpen]);
+
+  const initializeForm = useCallback(() => {
+    if (!formRef.current) return;
+    formRef.current.resetFields();
+
+    if (type === 'add') {
+      formRef.current.setFieldsValue({
+        type: 'anomaly',
+        algorithms: 'IsolationForest',
+      });
+    } else if (formData) {
+      formRef.current.setFieldsValue({
+        name: formData.name,
+        type: formData.type,
+        dataset_id: formData.dataset_id
+      });
+    }
+  }, [type, formData])
 
   const getDataSets = useCallback(async (dataset_id: number) => {
     setSelectLoading(true);
