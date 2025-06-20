@@ -25,13 +25,13 @@ const Topsection = memo(({
   return (
     <div className="mb-4 flex w-full gap-4">
       <div className="w-[216px] rounded-lg flex h-[90px] flex-col items-center justify-center bg-white shadow">
-        <div className="flex justify-center items-center mb-2">
+        <div className="flex justify-center items-center w-full">
           <Icon
             type="chakanshuji"
             className="mr-2"
             style={{ height: '22px', width: '22px', color: '#1976d2' }}
           />
-          <h1 className="text-lg font-bold leading-[24px] text-gray-800">{folder_name}</h1>
+          <h1 className="text-lg text-center font-bold leading-[24px] text-gray-800 max-w-[50%] truncate">{folder_name}</h1>
         </div>
         <p className="text-xs text-gray-500">{description}</p>
       </div>
