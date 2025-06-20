@@ -20,13 +20,13 @@ const AnnotationIntro = memo(() => {
   const folder_name = searchParams.get('folder_name');
   return (
     <div className="flex h-[58px] flex-col items-center justify-center">
-      <div className='flex justify-center mb-2'>
+      <div className='flex justify-center mb-2 w-full'>
         <Icon
           type="shiyongwendang"
           className="mr-2"
           style={{ height: '22px', width: '22px', color: 'blue' }}
         ></Icon>
-        <h1 className="text-center text-lg leading-[24px]">{folder_name}</h1>
+        <h1 className="text-center text-lg leading-[24px] truncate max-w-[50%]">{folder_name}</h1>
       </div>
     </div>
   );
@@ -36,8 +36,8 @@ const Topsection = memo(() => {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-      <h1 className="text-lg font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
-      <p className="text-xs overflow-hidden w-full min-w-[1000px] text-gray-500 mt-[8px]">
+      <h1 className="text-lg truncate w-full font-bold text-gray-900 mb-1">{t('datasets.title')}</h1>
+      <p className="text-xs truncate w-full min-w-[1000px] text-gray-500 mt-[8px]">
         {t('datasets.detail')}
       </p>
     </div>
@@ -189,7 +189,9 @@ const AnnotationPage = () => {
     // setTableLoading(true);
     const id = searchParams.get('id');
     const folder_id = searchParams.get('folder_id');
-    const fileList = await supabase.from('anomaly_detection_train_data').select().eq('dataset_id', folder_id);
+    const fileList = await supabase.from('anomaly_detection_train_data')
+      .select()
+      .eq('dataset_id', folder_id);
 
     if (fileList.data) {
       const item = fileList.data.find((k: any) => k.id == id);

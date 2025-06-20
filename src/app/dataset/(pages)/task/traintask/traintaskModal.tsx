@@ -22,7 +22,6 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess, datasets }: TrainTaskM
       title: string;
       form: TrainJob;
     }) => {
-      console.log(datasets);
       const items = datasets.map((item: DataSet) => {
         return {
           value: item.id,

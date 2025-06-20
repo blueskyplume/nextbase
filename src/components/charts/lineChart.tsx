@@ -353,7 +353,7 @@ const LineChart: React.FC<LineChartProps> = ({
               margin={{
                 top: 10,
                 right: formID ? 20 : 0,
-                left: -20,
+                left: 0,
                 bottom: 0,
               }}
               onClick={onClick}

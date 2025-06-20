@@ -222,7 +222,7 @@ const TrainTask = () => {
 
   const getDataSets = async () => {
     const { data } = await supabase.from('anomaly_detection_datasets').select();
-    if(data) return data;
+    if (data) return data;
     return [];
   };
 
@@ -299,13 +299,7 @@ const TrainTask = () => {
             <Topsection />
           </div>
           <div className="p-4 flex-1 rounded-lg bg-white shadow overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-4 gap-2">
-              <button
-                className="flex items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
-                onClick={() => router.back()}
-              >
-                <ArrowLeftOutlined className="mr-2 text-lg" />
-              </button>
+            <div className="flex justify-end items-center mb-4 gap-2">
               <div className="flex">
                 <Search
                   className="w-[240px] mr-1.5"
@@ -330,9 +324,16 @@ const TrainTask = () => {
                 loading={loading}
                 onChange={handleChange}
               />
+              <button
+                className="flex absolute right-0 left-0 items-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
+                onClick={() => router.back()}
+              >
+                <ArrowLeftOutlined className="mr-2 text-lg" />
+              </button>
             </div>
           </div>
         </section>
+
       </div>
       <TrainTaskModal
         ref={modalRef}
