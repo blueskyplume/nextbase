@@ -4,15 +4,14 @@ import { Form, Input, Button, Select, FormInstance, message } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import '@ant-design/v5-patch-for-react-19';
-import { Option, TrainJob, TrainTaskModalProps } from '@/types';
+import { DataSet, Option, TrainJob, TrainTaskModalProps } from '@/types';
 
-const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps) => {
+const TrainTaskModal = ({ ref, supabase, user, onSuccess, datasets }: TrainTaskModalProps) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('add');
   const [title, setTitle] = useState<string>('addtask');
   const [datasetItems, setDatasetItems] = useState<Option[]>([]);
-  const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<TrainJob | null>(null);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const formRef = useRef<FormInstance>(null);
@@ -23,19 +22,26 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
       title: string;
       form: TrainJob;
     }) => {
+      console.log(datasets);
+      const items = datasets.map((item: DataSet) => {
+        return {
+          value: item.id,
+          label: item.name
+        }
+      }) || [];
       setIsModalOpen(true);
       setType(type);
       setTitle(title);
       setFormData(form);
+      setDatasetItems(items as Option[]);
     }
   }));
 
   useEffect(() => {
     if (isModalOpen) {
-      getDataSets(formData?.dataset_id as number)
       initializeForm();
     }
-  }, [formData, isModalOpen]);
+  }, [isModalOpen]);
 
   const initializeForm = useCallback(() => {
     if (!formRef.current) return;
@@ -53,21 +59,7 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
         dataset_id: formData.dataset_id
       });
     }
-  }, [type, formData])
-
-  const getDataSets = useCallback(async (dataset_id: number) => {
-    setSelectLoading(true);
-    const { data } = await supabase.from('anomaly_detection_datasets').select();
-    const items = data?.map((item) => {
-      return {
-        value: item.id,
-        label: item.name
-      }
-    }) || [];
-    setDatasetItems(items as Option[]);
-    formRef.current?.setFieldValue('dataset_id', dataset_id);
-    setSelectLoading(false);
-  }, []);
+  }, [type, formData]);
 
   const handleSubmit = useCallback(async () => {
     if (confirmLoading) return;
@@ -150,7 +142,7 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
             label={t('traintask.datasets')}
             rules={[{ required: true, message: t('traintask.selectDatasets') }]}
           >
-            <Select placeholder={t('traintask.selectDatasets')} loading={selectLoading} options={datasetItems} />
+            <Select placeholder={t('traintask.selectDatasets')} options={datasetItems} />
           </Form.Item>
         </Form>
       </OperateModal>
