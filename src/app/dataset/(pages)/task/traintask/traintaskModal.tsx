@@ -142,7 +142,7 @@ const TrainTaskModal = ({ ref, supabase, user, onSuccess }: TrainTaskModalProps)
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
             <Select placeholder={t('common.inputMsg')} options={[
-              { value: 'anomaly', label: '单指标检测异常' },
+              { value: 'anomaly', label: t('datasets.anomaly') },
             ]} />
           </Form.Item>
           <Form.Item

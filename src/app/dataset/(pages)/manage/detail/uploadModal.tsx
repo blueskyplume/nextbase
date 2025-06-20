@@ -1,13 +1,12 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
 import { useState, useImperativeHandle, useContext } from 'react';
-import { useTranslation } from '@/utils/i18n';
-import { Upload, Button, message } from 'antd';
-import type { UploadFile, UploadProps } from 'antd'
-import { InboxOutlined } from '@ant-design/icons';
 import { supabase } from '@/utils/supabaseClient';
-import { ModalConfig, TableData } from '@/types';
 import { UserInfoContext } from '@/context/userInfo';
+import { useTranslation } from '@/utils/i18n';
+import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
+import { ModalConfig, TableData } from '@/types';
 import { User } from '@supabase/supabase-js';
 const { Dragger } = Upload;
 
@@ -40,7 +39,7 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
     beforeUpload: (file) => {
       const isCSV = file.type === "text/csv" || file.name.endsWith('.csv');
       if (!isCSV) {
-        message.warning('仅支持上传csv文件')
+        message.warning(t('datasets.uploadWarn'))
       }
       return isCSV;
     },
@@ -53,7 +52,7 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
     const { id, app_metadata } = user as User;
     if(!file?.originFileObj) {
       setConfirmLoading(false);
-      return message.error('请上传文件');
+      return message.error(t('datasets.pleaseUpload'));
     }
     const { data, error } = await supabase.storage
       .from('datasets')
@@ -97,7 +96,7 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } else {
-      message.error('下载失败');
+      message.error(t('datasets.downloadError'));
     }
   }
 
@@ -121,7 +120,7 @@ const UploadModal = ({ ref, onSuccess }: { ref: any; onSuccess: () => void }) =>
         </p>
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
-      <p>仅支持csv格式的文件，点击<Button type='link' onClick={downloadTemplate}>下载模板</Button></p>
+      <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
     </OperateModal>
   )
 };

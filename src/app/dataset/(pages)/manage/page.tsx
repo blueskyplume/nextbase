@@ -1,23 +1,23 @@
 "use client";
-import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
-import { Segmented, Modal, message } from 'antd';
-import EntityList from '@/components/entity-list';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { supabase } from '@/utils/supabaseClient';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
-import DatasetModal from './dataSetsModal';
-import { ModalRef, DataSet } from '@/types';
 import { getName } from '@/utils/common';
+import { Segmented, Modal, message } from 'antd';
 import '@ant-design/v5-patch-for-react-19';
-import { supabase } from '@/utils/supabaseClient';
+import EntityList from '@/components/entity-list';
+import DatasetModal from './dataSetsModal';
 import { User } from '@supabase/supabase-js';
+import { ModalRef, DataSet } from '@/types';
 import sideMenuStyle from './index.module.scss';
-import { UserInfoContext } from '@/context/userInfo';
+// import { UserInfoContext } from '@/context/userInfo';
 const { confirm } = Modal;
 
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const userinfo = useContext(UserInfoContext);
+  // const userinfo = useContext(UserInfoContext);
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('anomaly');
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,12 +25,6 @@ const DatasetManagePage = () => {
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modalRef = useRef<ModalRef>(null);
-
-  useEffect(() => {
-    if (!loading) {
-      getDataSets();
-    }
-  }, [activeTab]);
 
   const datasetTypes = [
     { key: 'anomaly', value: 'anomaly', label: t('datasets.anomaly') },
@@ -58,6 +52,12 @@ const DatasetManagePage = () => {
       ),
     },
   ];
+
+  useEffect(() => {
+    if (!loading) {
+      getDataSets();
+    }
+  }, [activeTab]);
 
   const getDataSets = useCallback(async (search: string = '') => {
     setLoading(true);

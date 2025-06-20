@@ -1,18 +1,18 @@
 "use client";
 import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { useSearchParams } from 'next/navigation';
-import { Button, message, Spin, TablePaginationConfig } from "antd";
 import { cloneDeep } from "lodash";
 import { supabase } from "@/utils/supabaseClient";
+import { useLocalizedTime } from "@/hooks/useLocalizedTime";
+import { useTranslation } from "@/utils/i18n";
+import { exportToCSV } from "@/utils/common";
+import { Button, message, Spin, TablePaginationConfig } from "antd";
+import '@ant-design/v5-patch-for-react-19';
 import Aside from "./components/aside";
 import Icon from '@/components/icon';
 import LineChart from "@/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
 import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination } from '@/types';
-import { useLocalizedTime } from "@/hooks/useLocalizedTime";
-import { useTranslation } from "@/utils/i18n";
-import { exportToCSV } from "@/utils/common";
-import '@ant-design/v5-patch-for-react-19';
 import sideMenuStyle from './components/index.module.scss';
 
 const AnnotationIntro = memo(() => {
