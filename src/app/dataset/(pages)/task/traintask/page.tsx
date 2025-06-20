@@ -11,7 +11,7 @@ import TrainTaskModal from './traintaskModal';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
 import { useTranslation } from '@/utils/i18n';
-import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory } from '@/types';
+import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory, DataSet, TrainData } from '@/types';
 import { User } from '@supabase/supabase-js';
 import { TrainStatus, TrainText } from '@/constants';
 import sideMenuStyle from './index.module.scss';
@@ -33,7 +33,8 @@ const TrainTask = () => {
   const traindataRef = useRef<ModalRef>(null);
   const [user, setUser] = useState<User | null>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
-  const [trainData, setTrainData] = useState<any[]>([]);
+  const [trainData, setTrainData] = useState<TrainData[]>([]);
+  const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
   const [selectId, setSelectId] = useState<number | null>(null);
   const [open, setOpen] = useState<boolean>(false);
@@ -158,6 +159,8 @@ const TrainTask = () => {
     try {
       const { data, count } = await fetchTaskList(search, pagination.current, pagination.pageSize);
       const history = (await fetchHistory()) || [];
+      const datasets = await getDataSets();
+      console.log(datasets)
       const { data: users } = await supabase
         .from('user_profiles')
         .select('id,first_name,last_name');
@@ -172,6 +175,7 @@ const TrainTask = () => {
         user_id: item.user_id
       })) || [];
       setTableData(_data as TrainJob[]);
+      setDatasets(datasets);
       setHistoryData(history);
       setPagination(prev => ({
         ...prev,
@@ -214,6 +218,12 @@ const TrainTask = () => {
     } catch (e) {
       console.log(e);
     }
+  };
+
+  const getDataSets = async () => {
+    const { data } = await supabase.from('anomaly_detection_datasets').select();
+    if(data) return data;
+    return [];
   };
 
   const getCurrentUser = async () => {
@@ -328,6 +338,7 @@ const TrainTask = () => {
         ref={modalRef}
         supabase={supabase}
         user={user as User}
+        datasets={datasets}
         onSuccess={() => getTasks()}
       />
       <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} historyData={historyData} trainData={trainData} />
