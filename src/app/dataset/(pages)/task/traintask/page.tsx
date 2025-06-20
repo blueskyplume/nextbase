@@ -128,8 +128,8 @@ const TrainTask = () => {
   const Topsection = () => (
     <div className="mb-4 flex w-full gap-4">
       <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
-        <h1 className="text-lg font-bold text-gray-900 mb-1">{t('traintask.traintask')}</h1>
-        <p className="text-xs text-gray-500">
+        <h1 className="text-lg w-full truncate font-bold text-gray-900 mb-1">{t('traintask.traintask')}</h1>
+        <p className="text-xs text-gray-500 w-full truncate">
           {t('traintask.description')}
         </p>
       </div>

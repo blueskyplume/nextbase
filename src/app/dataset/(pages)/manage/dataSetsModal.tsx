@@ -75,11 +75,15 @@ const DatasetModal = ({ ref, supabase, user, onSuccess }: DatasetModalProps) => 
       }
       if (result?.error) {
         message.error(result.error.message);
+        return;
       }
       message.success(t(`datasets.${type}Success`));
       setIsModalOpen(false);
       onSuccess();
-    } finally {
+    } catch (e) {
+      console.log(e)
+    }
+    finally {
       setConfirmLoading(false);
     }
   };
