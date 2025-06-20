@@ -1,6 +1,6 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
-import { Form, Input, Button, Select, Typography, FormInstance, message } from 'antd';
+import { Form, Input, Button, FormInstance, message } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { SupabaseClient, User } from '@supabase/supabase-js';

@@ -1,15 +1,14 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import sideMenuStyle from './index.module.scss';
-import { Spin, Modal } from 'antd'
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import Icon from '@/components/icon';
-import { useRouter } from 'next/navigation';
-import { AnomalyTrainData } from '@/types';
-import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useTranslation } from '@/utils/i18n';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { Spin, Modal } from 'antd';
+import Icon from '@/components/icon';
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import { AnomalyTrainData } from '@/types';
+import sideMenuStyle from './index.module.scss';
 const { confirm } = Modal;
 
 const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean, onChange: (value: boolean) => void, changeFlag: (value: boolean) => void }) => {
@@ -34,8 +33,8 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
     e.preventDefault();
     if (isChange) {
       confirm({
-        title: `离开此页面`,
-        content: `请确认数据是否已保存?`,
+        title: t('datasets.leave'),
+        content: t('datasets.leaveContent'),
         okText: t('common.confirm'),
         cancelText: t('common.cancel'),
         centered: true,
@@ -54,8 +53,8 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
 
   const showConfirm = (id: number) => {
     confirm({
-      title: `离开此页面`,
-      content: `请确认数据是否已保存?`,
+      title: t('datasets.leave'),
+      content: t('datasets.leaveContent'),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       centered: true,

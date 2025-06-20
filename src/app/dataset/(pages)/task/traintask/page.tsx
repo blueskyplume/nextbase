@@ -1,21 +1,20 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, Input, Popconfirm, message, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import CustomTable from '@/components/custom-table';
-import sideMenuStyle from './index.module.scss';
-import TrainTaskModal from './traintaskModal';
 import { supabase } from '@/utils/supabaseClient';
-import { User } from '@supabase/supabase-js';
-import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory } from '@/types';
-import { TrainStatus, TrainText } from '@/constants';
+import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { getName } from '@/utils/common';
+import { Button, Input, Popconfirm, message, Tag } from 'antd';
+import { PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import CustomTable from '@/components/custom-table';
+import TrainTaskModal from './traintaskModal';
 import TrainTaskDrawer from './traintaskDrawer';
 import TrainDataModal from './traindataModal';
 import { useTranslation } from '@/utils/i18n';
-import { useLocalizedTime } from "@/hooks/useLocalizedTime";
+import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory } from '@/types';
+import { User } from '@supabase/supabase-js';
+import { TrainStatus, TrainText } from '@/constants';
+import sideMenuStyle from './index.module.scss';
 const { Search } = Input;
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
@@ -128,9 +127,9 @@ const TrainTask = () => {
   const Topsection = () => (
     <div className="mb-4 flex w-full gap-4">
       <div className="flex-1 flex flex-col justify-center h-[90px] p-4 rounded-lg bg-white shadow">
-        <h1 className="text-lg font-bold text-gray-900 mb-1">训练任务</h1>
+        <h1 className="text-lg font-bold text-gray-900 mb-1">{t('traintask.traintask')}</h1>
         <p className="text-xs text-gray-500">
-          创建训练任务，对各个模型进行训练，训练完成后，可在模型库查看最终的模型。
+          {t('traintask.description')}
         </p>
       </div>
     </div>
@@ -273,7 +272,7 @@ const TrainTask = () => {
     } catch (e) {
       console.log(e);
     } finally {
-      message.success('删除成功');
+      message.success(t('common.successfullyDeleted'));
       getTasks();
     }
   };
@@ -300,13 +299,13 @@ const TrainTask = () => {
               <div className="flex">
                 <Search
                   className="w-[240px] mr-1.5"
-                  placeholder="搜索任务名称"
+                  placeholder={t('traintask.searchText')}
                   enterButton
                   onSearch={onSearch}
                   style={{ fontSize: 15 }}
                 />
                 <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow" onClick={() => handleAdd()}>
-                  新建
+                  {t('common.add')}
                 </Button>
               </div>
             </div>
